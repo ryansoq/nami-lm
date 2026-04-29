@@ -245,7 +245,7 @@ def compute_bpb(loss, tokenizer, texts):
     return loss / math.log(2) / avg
 
 
-TIME_BUDGET = 20 * 60
+TIME_BUDGET = 30 * 60  # phase 2: 30 min so larger corpus can fit more epochs
 
 
 # Phase 0 persona probes — questions taken from synthesize_qa.py's

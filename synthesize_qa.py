@@ -171,10 +171,20 @@ def main():
         CLAWD / "SOUL.md",
         CLAWD / "MEMORY.md",
     ]
-    # add a few topic files (skip the giant book ones)
+    # All topics (phase 2: include book chapters — they have lots of
+    # well-structured Q&A material in the form of "**term:** definition")
     topics_dir = CLAWD / "memory" / "topics"
     for f in sorted(topics_dir.glob("*.md")):
-        if not f.name.startswith("book-"):  # books are huge; skip for phase 0
+        sources.append(f)
+    # Recent daily notes (phase 2: ~30 days adds rich daily context)
+    memory_dir = CLAWD / "memory"
+    daily_files = sorted(memory_dir.glob("2026-*.md"), reverse=True)[:30]
+    for f in daily_files:
+        sources.append(f)
+    # Auto-memory snapshot (phase 2: agent's collaboration patterns)
+    auto_mem = CLAWD / "memory" / "auto-memory"
+    if auto_mem.exists():
+        for f in sorted(auto_mem.glob("*.md")):
             sources.append(f)
 
     pairs: list[tuple[str, str]] = []
