@@ -132,4 +132,9 @@ TOPIC_QA = [
     ("Causal Mask 用途？", "讓自回歸解碼看不到未來 token"),
     ("Attention 為什麼貴？", "O(n^2) 對 sequence length 平方"),
     ("KV Cache？", "推理時把過去的 K V 存起來不用重算"),
+
+    # ── HYP4 補強：HYP3 規退的 numpy-grad / autochat 短形式回收 ──
+    ("numpy-grad 是？", "純NumPy寫的反向傳播引擎"),
+    ("autochat 是？", "在 numpy-grad 上跑的 mini transformer"),
+    ("autochat 主要功能？", "用 numpy-grad 訓 GPT-1 Mini autoresearch"),
 ]

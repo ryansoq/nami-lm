@@ -187,10 +187,16 @@ def main():
     daily_files = sorted(memory_dir.glob("2026-*.md"), reverse=True)[:30]
     for f in daily_files:
         sources.append(f)
-    # Auto-memory snapshot (phase 2: agent's collaboration patterns)
+    # Auto-memory snapshot (phase 2: agent's collaboration patterns).
+    # Phase 5 HYP4: skip auto-memory MEMORY.md — it's an index file, its
+    # `- [Title](file.md) — hook` bullets corrupt the parser's key extraction
+    # (key="[Title", val="hook](file.md)") and shadow clean TOPIC_QA answers
+    # via first-seen dedup. Real content lives in the per-topic files.
     auto_mem = CLAWD / "memory" / "auto-memory"
     if auto_mem.exists():
         for f in sorted(auto_mem.glob("*.md")):
+            if f.name == "MEMORY.md":
+                continue
             sources.append(f)
 
     pairs: list[tuple[str, str]] = []
