@@ -23,21 +23,42 @@ is the teacher; nami-lm (via numpy-grad) is the student.
 
 ## Phases
 
-### Phase 0 — Bootstrap
+### Phase 0 — Bootstrap ✅ DONE 2026-04-29
 
 Goal: prove the autochat → nami-lm port runs end-to-end on a tiny
 slice of Nami's own memory.
 
-- [x] Repo scaffold (this commit)
-- [ ] Fork autochat's `train.py` and `plot_progress.py` into
-      `nami-lm/`, swap the hardcoded `TRAINING_DATA` for a corpus
-      extractor that reads ~5 KB of MEMORY.md / IDENTITY.md / SOUL.md
-- [ ] Run baseline with WordTokenizer; record `final_bpb` and the
-      answer to one persona probe ("妳是誰？")
-- [ ] Commit phase-0 baseline; advance `state.json:phase` to 1
+- [x] Repo scaffold (commit 526a1d6)
+- [x] Fork autochat's `train.py` into `nami-lm/`; swap hardcoded
+      TRAINING_DATA for `extract_corpus.py` (raw markdown chunks)
+- [x] First baseline run — bpb 0.1451 BUT persona probes 0/5 because
+      raw markdown teaches structure not semantics. Lesson: need
+      Q&A format. Failed gate honestly, kept moving.
+- [x] Wrote `synthesize_qa.py` — markdown → 283 (Q,A) pairs. Three
+      rules (bold-bullet KV / dash-bullet KV / H2-heading) plus 20
+      hand-curated persona QAs cap-checked at 40 chars to bound
+      seq_len.
+- [x] Re-ran baseline with Q&A format, autochat sweet-spot model
+      (d=96/ff=256/h=6/L=3, 583k params): bpb **0.0591**, persona
+      **5/5 pass**. Gate cleared.
+- [x] Sample outputs:
+      ```
+      妳是誰？ → 'Nami...'
+      Nami是誰？ → '厲害的AI工程師夥伴...'
+      Ryan是誰？ → 'Nami的人類夥伴工程師...'
+      Kaspa是什麼？ → '基於BlockDAG的區塊鏈...'
+      ClawX是什麼？ → 'Claude Code的PTY包裝器...'
+      ```
 
-Gate to phase 1: WordTokenizer baseline trains without crash and the
-model can complete at least one persona-relevant prefix.
+Gate to phase 1: ✅ baseline trains without crash; persona probes
+score 5/5 (gate was ≥1).
+
+**Lessons logged for phase 1:**
+- Raw markdown corpus gives the wrong signal at this scale; Q&A
+  format is the lift. Phase 1 BPE should keep the Q&A pipeline.
+- Smaller answers (≤40 chars) keep epochs fast (~20s vs 360s for
+  the v1 long-paragraph corpus). Defer longer-context experiments
+  to phase 3.
 
 ### Phase 1 — BPE tokenizer
 

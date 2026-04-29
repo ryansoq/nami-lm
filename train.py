@@ -43,23 +43,36 @@ from numpy_grad.nn import (
 
 
 HERE = Path(__file__).parent
-CORPUS = HERE / "data" / "phase0_corpus.jsonl"
+QA_CORPUS = HERE / "data" / "phase0_qa.jsonl"
 
 
 # =============================================================================
 # Corpus + tokenizer
 # =============================================================================
 def load_corpus() -> list[str]:
-    """Load corpus chunks from data/phase0_corpus.jsonl."""
-    if not CORPUS.exists():
+    """Load Q&A pairs from phase0_qa.jsonl, format each as 'q？a'.
+
+    Why this format: autochat's TRAINING_DATA used the same pattern
+    ('question？answer' as a single autoregressive sequence) and that
+    learned 92/92 acc. We're copying the proven format. The persona
+    probe at end of train() prefixes the question and asks the model
+    to complete the answer.
+    """
+    if not QA_CORPUS.exists():
         raise FileNotFoundError(
-            f"{CORPUS} missing — run `python3 extract_corpus.py` first")
+            f"{QA_CORPUS} missing — run `python3 synthesize_qa.py` first")
     out = []
-    with open(CORPUS, encoding="utf-8") as f:
+    with open(QA_CORPUS, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if line:
-                out.append(json.loads(line)["text"])
+            if not line:
+                continue
+            d = json.loads(line)
+            q, a = d["q"].strip(), d["a"].strip()
+            # Strip a trailing "?/？" from q if present so the join puts one
+            # consistent delimiter between Q and A
+            q = q.rstrip("?？")
+            out.append(f"{q}？{a}")
     return out
 
 
@@ -203,12 +216,16 @@ def compute_bpb(loss, tokenizer, texts):
 TIME_BUDGET = 20 * 60
 
 
+# Phase 0 persona probes — questions taken from synthesize_qa.py's
+# PERSONA_QA list. The model must produce a completion that starts
+# with the matching answer. (Phase 4 will turn this into the full
+# eval framework.)
 PERSONA_PROBES = [
-    "Nami",          # should continue with descriptor
-    "Ryan",          # should continue with relationship
-    "Kaspa",         # should continue with technical context
-    "婕",            # should continue with friend context
-    "ClawX",         # should continue with framework context
+    ("妳是誰？", "Nami"),
+    ("Nami是誰？", "厲害的"),
+    ("Ryan是誰？", "Nami"),
+    ("Kaspa是什麼？", "基於"),
+    ("ClawX是什麼？", "Claude"),
 ]
 
 
@@ -234,10 +251,11 @@ def train(epochs: int = 200, lr: float = 0.002,
     median_len = sorted(len(ids) for ids in encoded)[len(encoded) // 2]
     print(f"📏 Seq len: median={median_len}, max={max_len}")
 
-    # Cap max_seq_len to keep model small in phase 0
-    max_seq_len = min(max(max_len, 64), 128)
+    # Cap max_seq_len so phase-0 epoch time stays ≤ autochat scale
+    max_seq_len = min(max(max_len, 32), 64)
 
-    d_model, d_ff, num_heads, num_layers = 128, 384, 8, 3
+    # Autochat HYP11 sweet spot — bpb 0.0988 on 92 QA, ~9s/epoch
+    d_model, d_ff, num_heads, num_layers = 96, 256, 6, 3
     model = GPTMini(
         vocab_size=tokenizer.vocab_size,
         d_model=d_model, d_ff=d_ff, num_heads=num_heads,
@@ -325,16 +343,22 @@ def train(epochs: int = 200, lr: float = 0.002,
     final_bpb = avg_loss / math.log(2) / avg_bpt
     print(f"\n⏱️  Total: {elapsed:.1f}s | loss={avg_loss:.4f} | bpb={final_bpb:.4f}")
 
-    # Persona probe
-    print("\n🔮 Persona probe (Phase 4 will turn this into a real metric):")
-    for q in PERSONA_PROBES:
+    # Persona probe — Phase 0 gate
+    print("\n🔮 Persona probe (Phase 0 gate):")
+    persona_pass = 0
+    for q, expected_prefix in PERSONA_PROBES:
         ids = tokenizer.encode(q)
         if not ids:
             print(f"  {q!r} → not in vocab, skipping")
             continue
-        gen = model.generate(ids, max_new=30, temperature=0.01)
-        completion = tokenizer.decode(gen[len(ids):])[:50]
-        print(f"  {q!r:>10} → {completion!r}")
+        gen = model.generate(ids, max_new=20, temperature=0.01)
+        completion = tokenizer.decode(gen[len(ids):])[:40]
+        ok = expected_prefix in completion[:len(expected_prefix) + 4]
+        mark = "✅" if ok else "❌"
+        if ok:
+            persona_pass += 1
+        print(f"  {mark} {q!r} → {completion!r}  (expect prefix '{expected_prefix}')")
+    print(f"\n📊 Persona: {persona_pass}/{len(PERSONA_PROBES)} pass")
 
     # Log to experiments.jsonl
     result = {

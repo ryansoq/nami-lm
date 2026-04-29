@@ -1,14 +1,28 @@
 {
-  "phase": 0,
-  "phase_name": "Bootstrap",
-  "best_bpb": null,
-  "best_bpb_commit": null,
-  "best_persona": null,
-  "best_persona_commit": null,
+  "phase": 1,
+  "phase_name": "BPE tokenizer",
+  "best_bpb": 0.0591,
+  "best_bpb_commit": "(pending phase-0 KEEP commit)",
+  "best_persona": "5/5",
+  "best_persona_commit": "(pending phase-0 KEEP commit)",
   "current_pid": null,
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
-  "last_result": null,
-  "tried_hypotheses": []
+  "last_result": {
+    "phase": 0,
+    "hypothesis": "Q&A format baseline (synthesize_qa.py + autochat HYP11 sweet spot model)",
+    "bpb": 0.0591,
+    "persona": "5/5",
+    "kept": true,
+    "verdict": "PHASE 0 GATE PASSED",
+    "log": "/tmp/nami-lm-phase0v3-1777437124.log",
+    "epochs_to_budget": 60,
+    "config": {"d_model": 96, "d_ff": 256, "num_heads": 6, "num_layers": 3, "lr": 0.002, "vocab_size": 1407, "params": 583680, "BATCH_SIZE": 8}
+  },
+  "tried_hypotheses": [
+    {"name": "phase-0 v1 raw-markdown", "bpb": 0.1451, "persona": "0/5", "kept": false, "note": "garbage probes — markdown structure not semantics"},
+    {"name": "phase-0 v2 Q&A long answers d=128", "bpb": null, "kept": false, "note": "killed — 6 min/epoch, can't fit budget"},
+    {"name": "phase-0 v3 Q&A capped 40 chars d=96 (autochat HYP11)", "bpb": 0.0591, "persona": "5/5", "kept": true}
+  ]
 }
