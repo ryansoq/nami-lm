@@ -44,6 +44,15 @@ from numpy_grad.nn import (
 
 HERE = Path(__file__).parent
 QA_CORPUS = HERE / "data" / "phase0_qa.jsonl"
+TOK_DIR = HERE / "tokenizer"
+
+# Phase 1 evaluation: BPE infra ships and is lossless, but at the
+# 18 KB phase-0 corpus most Chinese chars don't reach the merge
+# frequency threshold and end up as 3 separate byte-tokens. That hurts
+# bpb badly (+94% vs WordTokenizer). Defer activation to phase 2 when
+# corpus is ≥ 100 KB and merges actually pay.
+# Toggle to `True` to re-evaluate after corpus expansion.
+USE_BPE = False
 
 
 # =============================================================================
@@ -79,8 +88,8 @@ def load_corpus() -> list[str]:
 class WordTokenizer:
     """Phase 0 tokenizer — same hybrid rule as autochat: ASCII alpha
     runs and digit runs become single tokens, everything else
-    (Chinese, punctuation, whitespace) is char-level. BPE arrives in
-    phase 1."""
+    (Chinese, punctuation, whitespace) is char-level. Phase 1 replaces
+    this with BPE."""
 
     def __init__(self, texts):
         all_tokens = set()
@@ -116,6 +125,29 @@ class WordTokenizer:
 
     def decode(self, ids):
         return "".join(self.id2token[i] for i in ids if i in self.id2token)
+
+
+class BPETokenizer:
+    """Phase 1 tokenizer — wraps `tokenizer/bpe.BPE` with the same
+    interface as WordTokenizer so train.py can use it interchangeably.
+
+    Vocab size is fixed at training time (default 1024); this wrapper
+    just exposes it via .vocab_size for the model constructor.
+    """
+
+    def __init__(self, texts=None):
+        # `texts` is accepted for API parity with WordTokenizer but not
+        # used — BPE is pre-trained via train_bpe.py.
+        from tokenizer.bpe import BPE
+        self._bpe = BPE.load(TOK_DIR)
+        self.vocab_size = self._bpe.vocab_size
+        self.name = "BPETokenizer"
+
+    def encode(self, text):
+        return self._bpe.encode(text)
+
+    def decode(self, ids):
+        return self._bpe.decode(ids)
 
 
 # =============================================================================
@@ -241,8 +273,12 @@ def train(epochs: int = 200, lr: float = 0.002,
     print(f"📝 Corpus: {len(corpus)} chunks, "
           f"{sum(len(c.encode('utf-8')) for c in corpus):,} bytes")
 
-    tokenizer = WordTokenizer(corpus)
-    print(f"📊 Vocab: {tokenizer.vocab_size} tokens")
+    if USE_BPE:
+        tokenizer = BPETokenizer()
+        print(f"📊 Vocab: {tokenizer.vocab_size} tokens (BPE — phase 1+)")
+    else:
+        tokenizer = WordTokenizer(corpus)
+        print(f"📊 Vocab: {tokenizer.vocab_size} tokens (WordTokenizer — phase 0)")
 
     # Token-length stats so we know whether max_seq_len is sane
     encoded = [tokenizer.encode(c) for c in corpus]
