@@ -1,0 +1,14 @@
+{
+  "phase": 0,
+  "phase_name": "Bootstrap",
+  "best_bpb": null,
+  "best_bpb_commit": null,
+  "best_persona": null,
+  "best_persona_commit": null,
+  "current_pid": null,
+  "current_started": null,
+  "current_hypothesis": null,
+  "current_log": null,
+  "last_result": null,
+  "tried_hypotheses": []
+}
