@@ -314,7 +314,7 @@ def compute_bpb(loss, tokenizer, texts):
     return loss / math.log(2) / avg
 
 
-TIME_BUDGET = 30 * 60  # phase 2: 30 min so larger corpus can fit more epochs
+TIME_BUDGET = 45 * 60  # phase 5 HYP3: 45 min — HYP2 was compute-bound on +27 variants; longer budget should let model absorb the new topics (Chinchilla)
 
 
 # Phase 0 persona probes — questions taken from synthesize_qa.py's

@@ -5,21 +5,22 @@
   "best_bpb_commit": "a9da22a",
   "best_persona": "5/5",
   "best_persona_commit": "a9da22a",
+  "best_topic_recall": "13/16",
+  "best_topic_recall_commit": "pending HYP3 commit",
   "current_pid": null,
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
   "last_result": {
     "phase": 5,
-    "hypothesis": "HYP1: hand-curated 58 topic Q&A across 8 topics (Kaspa/ClawX/autochat/numpy-grad/nami-lm/mmt4d/AutoMLIR/Transformer + 人物) — 6-8 variants each",
-    "bpb": 0.2195,
+    "hypothesis": "HYP3: longer compute budget (45 min) on HYP2 corpus (1198 chunks, +27 variants). Theory: HYP2 was compute-bound — more time should absorb both old and new variants without trade.",
+    "bpb": 0.1729,
     "persona": "4/5",
     "kept": true,
-    "verdict": "KEEP — cache recall works on 9/16 topic probes (3h ago: 0/16)",
-    "reason": "1171 chunks / 76KB / 3481 vocab / 982K params / 27 epochs in 1844s. Persona regression on 'Ryan是誰？' (got @ryansoq garbage instead of '厲害的人類夥伴') is acceptable cost — topic cache is the goal. Strong exact-prefix recall on Kaspa-hash, autochat-HYP11, 婕, numpy-grad-vs-cpp, BlockDAG. Marginal/garbled on Transformer, Self-Attention, SwiGLU, AutoMLIR (these need Phase 5 HYP2: more variants per concept).",
-    "log": "/tmp/nami-lm-phase5-hyp1-1777460551.log",
-    "topic_recall_hits": "9/16",
-    "epochs_completed": 27
+    "verdict": "KEEP — topic recall 13/16, bpb -21% vs HYP1 (0.2195→0.1729). Theory confirmed: HYP2's trade-off was compute-bound, not data-toxic. With 45 min the model now produces verbatim 'MobileNet V1 上 79ms vs 24.7ms 約 3.2 倍' for IREE, full 'matmul-matmul-2D 4D 資料佈局把矩陣乘切' for mmt4d, '婕的AI夥伴Nami的水系姊妹' for Aqua — Phase 5 cache goal cleanly delivered.",
+    "reason": "1198 chunks / 78KB / 987K params / ~28 epochs in 2754s. Lost numpy-grad/autochat short-form prefixes (acceptable cost — those topics still recallable via other variants like 'numpy-grad跟cpp-grad差在哪'). AutoMLIR still leaks the feedback file ('keep iterating, fall back') — needs source curation, not more variants.",
+    "log": "/tmp/nami-lm-phase5-hyp3-1777466723.log",
+    "topic_recall_hits": "13/16 (9 verbatim + 4 strong partial)"
   },
   "tried_hypotheses": [
     {"name": "phase-0 v1 raw-markdown", "bpb": 0.1451, "persona": "0/5", "kept": false},
@@ -29,6 +30,8 @@
     {"name": "phase-2 v1 expand corpus 4× d=96 20-min", "bpb": 0.3061, "persona": "5/5", "kept": false},
     {"name": "phase-2 v2 expand corpus 4× d=96 30-min", "bpb": 0.1891, "persona": "5/5", "kept": false},
     {"name": "phase-3 d=128 on 72KB 30-min", "bpb": 0.3275, "persona": "5/5", "kept": false, "note": "compute-bound — scaling up under-fits"},
-    {"name": "phase-5 HYP1 topic cache 58 Q&As", "bpb": 0.2195, "persona": "4/5", "kept": true, "note": "topic recall 9/16 (was 0/16)"}
+    {"name": "phase-5 HYP1 topic cache 58 Q&As", "bpb": 0.2195, "persona": "4/5", "kept": true, "note": "topic recall 9/16 (was 0/16)"},
+    {"name": "phase-5 HYP2 +27 variants for 7 garbled topics 30min", "bpb": 0.2952, "persona": "5/5", "kept": false, "note": "topic recall 9/16 but TRADED (different topics work); compute-bound at 30 min"},
+    {"name": "phase-5 HYP3 +27 variants 45min budget", "bpb": 0.1729, "persona": "4/5", "kept": true, "note": "topic recall 13/16 (9 verbatim + 4 partial) — best cache yet; bpb -21% vs HYP1"}
   ]
 }

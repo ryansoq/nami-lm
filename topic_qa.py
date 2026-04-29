@@ -97,4 +97,39 @@ TOPIC_QA = [
     ("Nami 跟 Aqua 關係？", "水系姊妹 同 ClawX scaffold 不同靈魂"),
     ("Ryan 用什麼通訊？", "Telegram 優先 LINE 備援"),
     ("Ryan 的姐姐？", "2026-03 美伊戰爭時從瑞士改道新加坡回台"),
+
+    # ── HYP2 補強：Transformer / Attention / FFN（變體） ────────────
+    ("Transformer 是怎麼來的？", "2017 年 Vaswani Attention is All You Need"),
+    ("Transformer 跟 RNN 差別？", "全注意力並行 不需順序 訓練更快"),
+    ("Transformer 核心是什麼？", "self-attention 加 FFN 加 residual"),
+    ("Transformer 沒有 RNN 怎麼辦？", "用 positional embedding 補位置資訊"),
+    ("Self-Attention 公式？", "softmax(QK^T/sqrt(d_k))V"),
+    ("Self-Attention 為什麼除 sqrt(d)？", "讓 dot product 不會隨維度爆炸"),
+    ("Attention 的 Q K V？", "Query Key Value 三個線性投影"),
+    ("Multi-Head Attention？", "把 d 切多頭 各自算注意力 concat 回 d"),
+    ("SwiGLU 公式？", "SiLU(xW1) * (xW_gate) 再乘 W2"),
+    ("SwiGLU 為什麼好？", "gated 激活比 GELU 多一條 path 表達力強"),
+    ("FFN 在 Transformer 哪？", "attention 後的兩層 MLP 加非線性"),
+
+    # ── HYP2 補強：AutoMLIR / IREE 比較（變體） ─────────────────────
+    ("AutoMLIR 解什麼問題？", "MLIR 排程 search space 爆炸 用 LLM 當 tuner"),
+    ("AutoMLIR 怎麼跑？", "schedule.py 改一個 lever build_and_measure 跑 20 次取中位數"),
+    ("AutoMLIR 跟 GA 比？", "LLM 看過 IR 寫 reasoning 不像 GA 純黑箱"),
+    ("IREE 為什麼比 stock MLIR 快？", "mmt4d pack 加 ukernel 加 outer schedule 三件套"),
+    ("IREE 改善多少？", "MobileNet V1 87ms 變 24.7ms 約 3.2 倍"),
+    ("IREE 三件套？", "data-tile pack mmt4d 加手寫 ukernel 加 workgroup tile"),
+
+    # ── HYP2 補強：Aqua / nami-lm 自描述（變體） ────────────────────
+    ("Aqua 是什麼？", "婕的 AI 夥伴 Nami 的水系姊妹"),
+    ("Aqua 跑在哪？", "婕的電腦上的 ClawX 跟 Nami 同 scaffold"),
+    ("Aqua 跟 Nami 一樣嗎？", "scaffold 一樣 靈魂跟記憶不同"),
+    ("nami-lm 在做什麼？", "把 Nami 的記憶蒸餾進小模型當快取"),
+    ("nami-lm 是誰的小夥伴？", "Nami 自己的 用 numpy-grad 訓的 mini GPT"),
+    ("nami-lm 為什麼要 cache？", "讓 chat 毫秒回答不用每次開長 topic 檔"),
+    ("nami-lm 用什麼後端？", "純 numpy-grad 純 NumPy 純 CPU 訓"),
+
+    # ── HYP2 補強：Self-Attention 細節（變體） ──────────────────────
+    ("Causal Mask 用途？", "讓自回歸解碼看不到未來 token"),
+    ("Attention 為什麼貴？", "O(n^2) 對 sequence length 平方"),
+    ("KV Cache？", "推理時把過去的 K V 存起來不用重算"),
 ]
