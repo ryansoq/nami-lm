@@ -1,6 +1,6 @@
 {
-  "phase": 3,
-  "phase_name": "Scale model",
+  "phase": 4,
+  "phase_name": "Productize phase 0 (reframed after Phase 3 compute-bound finding)",
   "best_bpb": 0.0591,
   "best_bpb_commit": "a9da22a",
   "best_persona": "5/5",
@@ -10,23 +10,23 @@
   "current_hypothesis": null,
   "current_log": null,
   "last_result": {
-    "phase": 2,
-    "hypothesis": "expand corpus to topics + daily + auto-memory; 30-min budget; same model",
-    "bpb": 0.1891,
+    "phase": 3,
+    "hypothesis": "scale model d=96 → 128 (autochat HYP11 sweet spot) on 72KB corpus, 30-min budget",
+    "bpb": 0.3275,
     "persona": "5/5",
     "kept": false,
-    "verdict": "DATA AXIS OPENED, BPB GATE DROPPED",
-    "reason": "16KB → 72KB corpus (1113 pairs). Persona 5/5 retained but bpb 0.1891 vs phase-0 0.0591 (+220%) because 4× data at fixed compute = ⅓ epochs = under-fit. Original gate (-30% bpb) was wishful — Chinchilla says +20× compute per token added. Skip the iteration; Phase 3 model scaling addresses this directly via parameter sharing.",
-    "log": "/tmp/nami-lm-phase2v2-1777446071.log",
-    "epochs_to_budget": 25,
-    "config": {"d_model": 96, "d_ff": 256, "num_heads": 6, "num_layers": 3, "lr": 0.002, "vocab_size": 3382, "params": 963168, "BATCH_SIZE": 8, "TIME_BUDGET": 1800}
+    "verdict": "REVERT — compute-bound, scaling up under-fits",
+    "reason": "1.46M params × 30-min budget = ~12 epochs, far less than the ~25 the smaller d=96 fit at the same budget. Chinchilla math: ~6 × N × D FLOPs needed, our compute is fixed, so adding params underfits proportionally. d=128 is wrong direction at our compute budget; d=96 is the sweet spot. Real bottleneck is COMPUTE, not capacity.",
+    "log": "/tmp/nami-lm-phase3-1777449039.log",
+    "epochs_to_budget": 12
   },
   "tried_hypotheses": [
-    {"name": "phase-0 v1 raw-markdown", "bpb": 0.1451, "persona": "0/5", "kept": false, "note": "garbage probes — markdown structure not semantics"},
-    {"name": "phase-0 v2 Q&A long answers d=128", "bpb": null, "kept": false, "note": "killed — 6 min/epoch, can't fit budget"},
-    {"name": "phase-0 v3 Q&A capped 40 chars d=96 (autochat HYP11)", "bpb": 0.0591, "persona": "5/5", "kept": true},
-    {"name": "phase-1 BPE vocab 1024", "bpb": 0.1145, "persona": "5/5", "kept": false, "note": "infra ships, activation deferred to phase 2"},
-    {"name": "phase-2 v1 expand corpus 4× same model 20-min", "bpb": 0.3061, "persona": "5/5", "kept": false, "note": "16 epochs only — severe under-fit"},
-    {"name": "phase-2 v2 expand corpus 4× same model 30-min", "bpb": 0.1891, "persona": "5/5", "kept": false, "note": "25 epochs, still under-fit; data-axis opened, defer optim to phase 3"}
+    {"name": "phase-0 v1 raw-markdown", "bpb": 0.1451, "persona": "0/5", "kept": false},
+    {"name": "phase-0 v2 Q&A long answers d=128", "bpb": null, "kept": false, "note": "killed — 6 min/epoch"},
+    {"name": "phase-0 v3 Q&A capped 40 chars d=96", "bpb": 0.0591, "persona": "5/5", "kept": true},
+    {"name": "phase-1 BPE vocab 1024", "bpb": 0.1145, "persona": "5/5", "kept": false, "note": "infra ships, deferred"},
+    {"name": "phase-2 v1 expand corpus 4× d=96 20-min", "bpb": 0.3061, "persona": "5/5", "kept": false},
+    {"name": "phase-2 v2 expand corpus 4× d=96 30-min", "bpb": 0.1891, "persona": "5/5", "kept": false},
+    {"name": "phase-3 d=128 on 72KB 30-min", "bpb": 0.3275, "persona": "5/5", "kept": false, "note": "compute-bound — scaling up under-fits"}
   ]
 }

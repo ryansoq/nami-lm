@@ -290,7 +290,10 @@ def train(epochs: int = 200, lr: float = 0.002,
     # Cap max_seq_len so phase-0 epoch time stays ≤ autochat scale
     max_seq_len = min(max(max_len, 32), 64)
 
-    # Autochat HYP11 sweet spot — bpb 0.0988 on 92 QA, ~9s/epoch
+    # Reverted to autochat HYP11 sweet spot after phase-3 d=128
+    # experiment showed scaling up just under-fits at our compute
+    # budget (Chinchilla math: more params without proportional
+    # compute = worse). Phase 0 setup remains the floor.
     d_model, d_ff, num_heads, num_layers = 96, 256, 6, 3
     model = GPTMini(
         vocab_size=tokenizer.vocab_size,

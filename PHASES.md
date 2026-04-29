@@ -125,40 +125,82 @@ model size.
 Gate to phase 3 (revised): data axis is opened (72 KB / 1113 pairs),
 persona retained 5/5. Accept the bpb hit; move to model scaling.
 
-### Phase 3 — Scale model
+### Phase 3 — Scale model ❌ COMPUTE-BOUND, REVERTED
 
 Goal: bump the model from autochat-sized (731k params, d=128, 3 layers)
 to nami-lm-sized (~10M params, d=256, 6 layers). Mini-batch training
 from autochat HYP5 makes this affordable in a 30-min budget.
 
-- [ ] Tune `d_model` 128→256 (HYP10 / HYP11 from autochat showed width
-      pays before depth on small corpora)
-- [ ] Tune `num_layers` 3→6 (HYP13 in autochat failed at 3KB; should
-      pay at 100KB+)
-- [ ] HYP loop on Adam betas / weight decay / grad-clip threshold for
-      the new arch
-- [ ] Track each HYP in `experiments.jsonl` + `progress.png` (autochat
-      pattern)
-- [ ] Commit and advance `state.json:phase` to 4
+- [⚠️] Tried d_model 96 → 128 (1.46M params) on 72-KB corpus / 30-min
+       budget → bpb **0.3275** vs phase-0 0.0591 (+454%) → REVERTED
+- [⚠️] Did NOT try num_layers 3→6 (would be even worse — depth scales
+       per-epoch cost more than width does, see autochat HYP13)
 
-Gate to phase 4: best val_bpb improves over phase-2 by ≥ 20%, model
-can answer at least 5 persona probes correctly.
+**Why scaling doesn't pay at our scale**: Chinchilla recipe says you
+need ~6 × N × D FLOPs of compute, where N=params and D=tokens. We
+have D ≈ 27 K tokens. For d=96 (583 K params) that's ~9 × 10¹⁰ FLOPs
+— roughly what 30 min of CPU buys us. For d=128 (1.46 M params) it's
+~2.3 × 10¹¹ FLOPs — 2.5× more, and we don't have that compute.
+Result: d=128 takes ~150 s/epoch vs d=96's ~75 s, only fits ~12
+epochs vs ~25, and is far worse at convergence.
 
-### Phase 4 — Eval framework
+**Decision**: revert train.py to d=96 (phase-0 sweet spot). The
+"scale up" plan from the original PHASES.md was wrong direction at
+our compute budget. The right capacity match for our 30-min CPU
+budget is roughly d=96 / 583 K params.
 
-Goal: stop relying on val_bpb alone. Build a proper evaluation harness
-that combines language-model loss with persona-grounded behaviour.
+**Real takeaway**: the scaling laws caveat us. We are **compute-bound,
+not capacity-bound**. To go further requires either (a) more compute
+(longer budget, or rent a GPU), or (b) shrinking the model below
+phase-0 to free up epochs at the cost of less expressive power.
 
-- [ ] Hold out 10% of corpus as val set; report val_bpb on it
-- [ ] Persona probe set: 20 hand-written questions covering identity
-      / Ryan / projects / world events. Score = exact-prefix-match
-      count / 20
-- [ ] Greedy decoding + temperature=0.01 stability check
-- [ ] Add `eval.py --report` that produces a single JSON summary the
-      heartbeat loop can compare against
-- [ ] Commit and advance `state.json:phase` to 5
+Phase 4-5 reframed in light of this discovery (next sections).
 
-Gate to phase 5: persona score ≥ 15/20 with val_bpb ≤ phase-3 best.
+### Phase 4 — Productize phase 0 (reframed)
+
+Original goal was a heavyweight eval framework, but Phase 3 showed
+we're at the local optimum already — bpb 0.0591 + persona 5/5 on
+the 16 KB Nami-specific corpus. The pragmatic next move is to make
+this model *usable* rather than chase further bpb on a corpus that
+saturates anyway.
+
+- [ ] Re-train phase-0 baseline once cleanly so `model_weights.json`
+      reflects the d=96 / 16 KB setup (current weights are stale
+      from later experiments)
+- [ ] Implement `train.py:probe()` properly: load weights, run the
+      5 persona probes, return JSON for the heartbeat loop
+- [ ] Implement `train.py --chat`: interactive REPL, prompt-style
+      Q&A using the saved weights — anyone with the repo can talk
+      to a tiny offline Nami
+- [ ] Add `eval.py` that runs both probes and a 20-question
+      hand-written exam (broader than the 5 handpicked persona Qs)
+- [ ] Document which prompts the model handles well vs poorly,
+      since persona-prefix-matching is a low bar (the next chars
+      after the prefix are still incoherent autoregressive noise)
+
+Gate to phase 5: model checkpoint ships, `--chat` works, eval.py
+produces a JSON summary the heartbeat loop can grep.
+
+### Phase 5 — Free iteration
+
+Goal: open-ended HYP loop — try anything that might push val_bpb or
+persona score, with the autoresearch standing directive from
+`feedback_autoresearch_standing_directive.md`.
+
+- HYP backlog (initial brainstorm, mostly orthogonal to scale-and-pray):
+  - **Tied embedding** (autochat HYP3 was wrong axis for autochat,
+    might pay here with a 3 K vocab)
+  - **AdamW betas (0.95, 0.99)** per GPT-3 paper; cheap to test
+  - **Smaller model (d=64)** to test the Chinchilla math directly
+  - **60-min budget single run** — see if more compute on phase-0
+    setup pushes below 0.0591
+  - **Tokenizer rework**: try BPE again at vocab 2048 (more merges
+    might capture rare Chinese chars)
+  - **Distillation from Claude inference** if we ever decide to
+    spend the API tokens
+
+This phase has no gate — it's where the project lives. Each HYP either
+ships (KEEP commit + push + new best in state.json) or reverts.
 
 ### Phase 5 — Free iteration
 
