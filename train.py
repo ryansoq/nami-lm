@@ -234,6 +234,75 @@ class GPTMini(Module):
     def param_count(self):
         return sum(p.data.size for p in self.parameters())
 
+    # -----------------------------------------------------------------
+    # Persistence — port of autochat's save/load
+    # -----------------------------------------------------------------
+    def save(self, path):
+        state = {
+            "config": {
+                "vocab_size": self.vocab_size, "d_model": self.d_model,
+                "d_ff": self.d_ff, "num_heads": self.num_heads,
+                "num_layers": self.num_layers, "max_seq_len": self.max_seq_len,
+            },
+            "token_emb": self.token_emb.weight.data.tolist(),
+            "pos_emb": self.pos_emb.data.tolist(),
+            "out_proj": self.out_proj.W.data.tolist(),
+            "head_w1": self.head.layers[0].W.data.tolist(),
+            "head_w2": self.head.layers[2].W.data.tolist(),
+            "blocks": [],
+        }
+        for b in self.blocks:
+            state["blocks"].append({
+                "ln1_g": b.ln1.gamma.data.tolist(),
+                "ln1_b": b.ln1.beta.data.tolist(),
+                "ln2_g": b.ln2.gamma.data.tolist(),
+                "ln2_b": b.ln2.beta.data.tolist(),
+                "Wq": b.mha.Wq.W.data.tolist(),
+                "Wk": b.mha.Wk.W.data.tolist(),
+                "Wv": b.mha.Wv.W.data.tolist(),
+                "Wo": b.mha.Wo.W.data.tolist(),
+                "Wq_b": b.mha.Wq.b.data.tolist(),
+                "Wk_b": b.mha.Wk.b.data.tolist(),
+                "Wv_b": b.mha.Wv.b.data.tolist(),
+                "Wo_b": b.mha.Wo.b.data.tolist(),
+                "ff_w1": b.ff.w1.W.data.tolist(),
+                "ff_gate": b.ff.gate.W.data.tolist(),
+                "ff_w2": b.ff.w2.W.data.tolist(),
+            })
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(state, f)
+        print(f"💾 Model saved to {path}")
+
+    @classmethod
+    def load(cls, path):
+        with open(path, encoding="utf-8") as f:
+            state = json.load(f)
+        cfg = state["config"]
+        m = cls(**cfg)
+        m.token_emb.weight.data = np.array(state["token_emb"])
+        m.pos_emb.data = np.array(state["pos_emb"])
+        m.out_proj.W.data = np.array(state["out_proj"])
+        m.head.layers[0].W.data = np.array(state["head_w1"])
+        m.head.layers[2].W.data = np.array(state["head_w2"])
+        for b, st in zip(m.blocks, state["blocks"]):
+            b.ln1.gamma.data = np.array(st["ln1_g"])
+            b.ln1.beta.data = np.array(st["ln1_b"])
+            b.ln2.gamma.data = np.array(st["ln2_g"])
+            b.ln2.beta.data = np.array(st["ln2_b"])
+            b.mha.Wq.W.data = np.array(st["Wq"])
+            b.mha.Wk.W.data = np.array(st["Wk"])
+            b.mha.Wv.W.data = np.array(st["Wv"])
+            b.mha.Wo.W.data = np.array(st["Wo"])
+            b.mha.Wq.b.data = np.array(st["Wq_b"])
+            b.mha.Wk.b.data = np.array(st["Wk_b"])
+            b.mha.Wv.b.data = np.array(st["Wv_b"])
+            b.mha.Wo.b.data = np.array(st["Wo_b"])
+            b.ff.w1.W.data = np.array(st["ff_w1"])
+            b.ff.gate.W.data = np.array(st["ff_gate"])
+            b.ff.w2.W.data = np.array(st["ff_w2"])
+        print(f"📂 Model loaded from {path}")
+        return m
+
 
 # =============================================================================
 # Training loop — mini-batch length-bucketed (autochat HYP5)
@@ -399,6 +468,10 @@ def train(epochs: int = 200, lr: float = 0.002,
         print(f"  {mark} {q!r} → {completion!r}  (expect prefix '{expected_prefix}')")
     print(f"\n📊 Persona: {persona_pass}/{len(PERSONA_PROBES)} pass")
 
+    # Save weights so probe / chat modes can reuse them
+    weights_path = HERE / "model_weights.json"
+    model.save(str(weights_path))
+
     # Log to experiments.jsonl
     result = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -422,17 +495,79 @@ def train(epochs: int = 200, lr: float = 0.002,
     print("📝 Experiment logged")
 
 
-def probe(prompt_list=PERSONA_PROBES):
-    """Quick probe — load saved weights and answer the persona probes.
-    For phase 0, no save/load yet; this is just prompt-style printing
-    after a fresh train.  Will be wired to a checkpoint in phase 4."""
-    print("Probe mode: phase 0 doesn't persist weights yet — run train.py "
-          "directly to see persona output at the end.")
+def _load_for_inference():
+    """Common path for probe / chat: load weights + tokenizer."""
+    weights = HERE / "model_weights.json"
+    if not weights.exists():
+        print(f"❌ {weights} missing — run `python3 train.py` first to "
+              "produce a checkpoint")
+        sys.exit(1)
+    corpus = load_corpus()
+    if USE_BPE:
+        tokenizer = BPETokenizer()
+    else:
+        tokenizer = WordTokenizer(corpus)
+    model = GPTMini.load(str(weights))
+    if model.vocab_size != tokenizer.vocab_size:
+        print(f"⚠️  vocab mismatch: model has {model.vocab_size} but "
+              f"tokenizer rebuilt with {tokenizer.vocab_size}. Re-run "
+              "training so checkpoint and corpus stay in sync.")
+        sys.exit(1)
+    return model, tokenizer
+
+
+def probe():
+    """Run the 5 phase-0 persona probes against the saved checkpoint."""
+    model, tok = _load_for_inference()
+    print("\n🔮 Persona probe (saved checkpoint):")
+    persona_pass = 0
+    for q, expected_prefix in PERSONA_PROBES:
+        ids = tok.encode(q)
+        if not ids:
+            print(f"  {q!r} → not in vocab, skipping"); continue
+        gen = model.generate(ids, max_new=20, temperature=0.01)
+        completion = tok.decode(gen[len(ids):])[:40]
+        ok = expected_prefix in completion[:len(expected_prefix) + 4]
+        mark = "✅" if ok else "❌"
+        if ok:
+            persona_pass += 1
+        print(f"  {mark} {q!r} → {completion!r}  (expect '{expected_prefix}')")
+    print(f"\n📊 Persona: {persona_pass}/{len(PERSONA_PROBES)} pass")
+
+
+def chat():
+    """Interactive REPL — talk to nami-lm using saved weights.
+    Type the question, press Enter, see the model's completion.
+    'q' / 'quit' / Ctrl-D to exit."""
+    model, tok = _load_for_inference()
+    print("\n🌊 nami-lm chat — type a question, q/quit to exit\n")
+    while True:
+        try:
+            q = input("❓ ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+        if q.lower() in ("q", "quit", "exit"):
+            break
+        if not q:
+            continue
+        # Strip any trailing question marks; the corpus uses 「？」
+        # between question and answer, so we re-add it consistently.
+        q = q.rstrip("?？") + "？"
+        ids = tok.encode(q)
+        if not ids:
+            print("   (couldn't encode that — chars not in vocab)\n")
+            continue
+        gen = model.generate(ids, max_new=40, temperature=0.05)
+        answer = tok.decode(gen[len(ids):])
+        print(f"🌊 {answer}\n")
 
 
 if __name__ == "__main__":
     if "--probe" in sys.argv:
         probe()
+    elif "--chat" in sys.argv:
+        chat()
     elif "--auto" in sys.argv:
         train(epochs=9999, time_budget=TIME_BUDGET)
     else:
