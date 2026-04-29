@@ -1,6 +1,6 @@
 {
-  "phase": 4,
-  "phase_name": "Productize phase 0 (reframed after Phase 3 compute-bound finding)",
+  "phase": 5,
+  "phase_name": "Topic cache — train Nami's technical knowledge into local weights",
   "best_bpb": 0.0591,
   "best_bpb_commit": "a9da22a",
   "best_persona": "5/5",
@@ -10,15 +10,16 @@
   "current_hypothesis": null,
   "current_log": null,
   "last_result": {
-    "phase": 3,
-    "hypothesis": "scale model d=96 → 128 (autochat HYP11 sweet spot) on 72KB corpus, 30-min budget",
-    "bpb": 0.3275,
-    "persona": "5/5",
-    "kept": false,
-    "verdict": "REVERT — compute-bound, scaling up under-fits",
-    "reason": "1.46M params × 30-min budget = ~12 epochs, far less than the ~25 the smaller d=96 fit at the same budget. Chinchilla math: ~6 × N × D FLOPs needed, our compute is fixed, so adding params underfits proportionally. d=128 is wrong direction at our compute budget; d=96 is the sweet spot. Real bottleneck is COMPUTE, not capacity.",
-    "log": "/tmp/nami-lm-phase3-1777449039.log",
-    "epochs_to_budget": 12
+    "phase": 5,
+    "hypothesis": "HYP1: hand-curated 58 topic Q&A across 8 topics (Kaspa/ClawX/autochat/numpy-grad/nami-lm/mmt4d/AutoMLIR/Transformer + 人物) — 6-8 variants each",
+    "bpb": 0.2195,
+    "persona": "4/5",
+    "kept": true,
+    "verdict": "KEEP — cache recall works on 9/16 topic probes (3h ago: 0/16)",
+    "reason": "1171 chunks / 76KB / 3481 vocab / 982K params / 27 epochs in 1844s. Persona regression on 'Ryan是誰？' (got @ryansoq garbage instead of '厲害的人類夥伴') is acceptable cost — topic cache is the goal. Strong exact-prefix recall on Kaspa-hash, autochat-HYP11, 婕, numpy-grad-vs-cpp, BlockDAG. Marginal/garbled on Transformer, Self-Attention, SwiGLU, AutoMLIR (these need Phase 5 HYP2: more variants per concept).",
+    "log": "/tmp/nami-lm-phase5-hyp1-1777460551.log",
+    "topic_recall_hits": "9/16",
+    "epochs_completed": 27
   },
   "tried_hypotheses": [
     {"name": "phase-0 v1 raw-markdown", "bpb": 0.1451, "persona": "0/5", "kept": false},
@@ -27,6 +28,7 @@
     {"name": "phase-1 BPE vocab 1024", "bpb": 0.1145, "persona": "5/5", "kept": false, "note": "infra ships, deferred"},
     {"name": "phase-2 v1 expand corpus 4× d=96 20-min", "bpb": 0.3061, "persona": "5/5", "kept": false},
     {"name": "phase-2 v2 expand corpus 4× d=96 30-min", "bpb": 0.1891, "persona": "5/5", "kept": false},
-    {"name": "phase-3 d=128 on 72KB 30-min", "bpb": 0.3275, "persona": "5/5", "kept": false, "note": "compute-bound — scaling up under-fits"}
+    {"name": "phase-3 d=128 on 72KB 30-min", "bpb": 0.3275, "persona": "5/5", "kept": false, "note": "compute-bound — scaling up under-fits"},
+    {"name": "phase-5 HYP1 topic cache 58 Q&As", "bpb": 0.2195, "persona": "4/5", "kept": true, "note": "topic recall 9/16 (was 0/16)"}
   ]
 }

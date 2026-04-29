@@ -40,6 +40,12 @@ OUT = Path(__file__).parent / "data" / "phase0_qa.jsonl"
 # Hand-crafted persona Q&A — these are the gate criteria, encode them
 # directly so the model can never miss them.
 # ---------------------------------------------------------------------------
+try:
+    from topic_qa import TOPIC_QA
+except ImportError:
+    TOPIC_QA = []
+
+
 PERSONA_QA = [
     # Phase 0 keeps answers ≤ 40 chars to bound max_seq_len.
     ("妳是誰？", "Nami"),
@@ -215,6 +221,20 @@ def main():
         pairs.append((q, a))
         persona_kept += 1
     print(f"  PERSONA_QA: +{persona_kept}")
+
+    # Topic Q&A — phase 5 cache pairs, ~60 hand-curated technical Q&As
+    # across 8-9 high-value topics. Each gets exposed multiple times in
+    # different phrasings so the model generalises beyond exact-prefix
+    # matching. Appended last so they get the latest add-position
+    # priority on collision.
+    topic_kept = 0
+    for q, a in TOPIC_QA:
+        if q in seen_q:
+            continue
+        seen_q.add(q)
+        pairs.append((q, a))
+        topic_kept += 1
+    print(f"  TOPIC_QA: +{topic_kept}")
 
     total_bytes = sum(len(q.encode("utf-8")) + len(a.encode("utf-8"))
                       for q, a in pairs)
