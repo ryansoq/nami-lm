@@ -95,10 +95,13 @@ bpb / persona / verdict / log path.
 
 ## Where to start reading
 
-1. [`PHASES.md`](PHASES.md) — the six phases from bootstrap to scaled
+1. [`ARCHITECTURE.md`](ARCHITECTURE.md) — the model, end-to-end with
+   tensor shapes and a parameter-count breakdown. Start here if you
+   want to *understand* nami-lm.
+2. [`PHASES.md`](PHASES.md) — the six phases from bootstrap to scaled
    model + eval
-2. [`program.md`](program.md) — per-tick autoresearch loop rules
-3. [`state.json`](state.json) — current phase, in-flight experiment,
+3. [`program.md`](program.md) — per-tick autoresearch loop rules
+4. [`state.json`](state.json) — current phase, in-flight experiment,
    best so far
 
 ## Authors
