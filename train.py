@@ -314,7 +314,7 @@ def compute_bpb(loss, tokenizer, texts):
     return loss / math.log(2) / avg
 
 
-TIME_BUDGET = 45 * 60  # phase 5 HYP3: 45 min — HYP2 was compute-bound on +27 variants; longer budget should let model absorb the new topics (Chinchilla)
+TIME_BUDGET = 60 * 60  # phase 5 HYP8: 60 min — HYP7 disproved orphan theory; realistic system load (zellij worker + VSCode) makes 45 min cut at ep 21 instead of ep 30. Bump to reach ep 30 reliably at the new baseline.
 
 
 # Phase 0 persona probes — questions taken from synthesize_qa.py's
