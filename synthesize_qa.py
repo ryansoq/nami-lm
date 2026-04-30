@@ -242,6 +242,48 @@ def main():
         topic_kept += 1
     print(f"  TOPIC_QA: +{topic_kept}")
 
+    # Phase 6 self-distillation — chained multi-turn dialogues.
+    # Each dialogue collapses to one Q-flavoured chunk: q1 with the
+    # answer being a1 plus the rest of the conversation chained in.
+    # Model trains on this as a single autoregressive sequence so it
+    # learns to keep producing alternating turns after the first answer.
+    # Dialogues OVERRIDE single-turn Q&A on Q collision: the chained
+    # answer begins with the same single-turn answer and continues
+    # further, so prefix-match probes still pass while the model also
+    # sees the multi-turn continuation.
+    try:
+        from dialogues import DIALOGUES
+    except ImportError:
+        DIALOGUES = []
+    dialogue_kept = 0
+    dialogue_overrode = 0
+    for d in DIALOGUES:
+        if not d:
+            continue
+        first_user = next((text for role, text in d if role == "U"), None)
+        if first_user is None:
+            continue
+        rest_turns = []
+        seen_first = False
+        for role, text in d:
+            if role == "U" and not seen_first:
+                seen_first = True
+                continue
+            rest_turns.append(text)
+        chained = " ".join(rest_turns)
+        if first_user in seen_q:
+            # Override: replace the existing single-turn pair in `pairs`.
+            for i, (q, _) in enumerate(pairs):
+                if q == first_user:
+                    pairs[i] = (first_user, chained)
+                    break
+            dialogue_overrode += 1
+        else:
+            seen_q.add(first_user)
+            pairs.append((first_user, chained))
+        dialogue_kept += 1
+    print(f"  DIALOGUES: +{dialogue_kept} (incl. {dialogue_overrode} overrides)")
+
     total_bytes = sum(len(q.encode("utf-8")) + len(a.encode("utf-8"))
                       for q, a in pairs)
     print(f"\nTotal: {len(pairs)} Q&A pairs, "
