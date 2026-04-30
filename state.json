@@ -13,14 +13,16 @@
   "current_log": null,
   "last_result": {
     "phase": 5,
-    "hypothesis": "HYP5: +4 HYP11 starter variants and +4 Aqua starter variants reinforcing '婕的 AI 夥伴' prefix. Goal: push topic recall 14/16 → 16/16 by densifying the 2 misses.",
-    "bpb": 0.2179,
+    "hypothesis": "HYP6: re-baseline run on HYP4 corpus to verify reproducibility + restore working model_weights.json after HYP5 trashed it. No code or data changes.",
+    "bpb": 0.2197,
     "persona": "3/5",
     "kept": false,
-    "verdict": "REVERT — bpb +36% vs HYP4 (0.1602→0.2179), persona regressed 5/5 → 3/5. Both metrics degraded by far more than the 5% threshold. 1200-chunk corpus + 45 min budget = only 20 epochs reached (vs HYP4's ~30) → severely under-trained. The 8 added variants pushed corpus past the compute budget's sweet spot.",
-    "reason": "Lesson: at fixed 45-min budget, +1.6% corpus growth (1181→1200) cost ~33% epochs (30→20). The TOPIC_QA recall trade-off needs source curation (which HYP4 proved) more than variant addition. To push 14/16 → 16/16 we need either (a) longer budget (60 min in HYP9), (b) curate 2 misses' answers themselves rather than add Q-side variants, or (c) regression test before merge so we catch the under-train early.",
-    "log": "/tmp/nami-lm-phase5-hyp5-1777507351.log",
-    "topic_recall_hits": "not probed — auto run only does 5 persona; trust persona 3/5 as proxy"
+    "verdict": "REVERT — but reveals a CRITICAL process-hygiene bug, not a model bug",
+    "reason": "Should have reproduced HYP4 (bpb 0.1602 / persona 5/5) but landed near HYP5 (bpb 0.2179 / persona 3/5). Root cause discovered post-run: orphan bun process PID 92506 (server.ts, PPID=1, 34h elapsed, 99.4% CPU continuous since Apr 29 23:21 cleanup) was contending for 1 full CPU core. nami-lm training slowed ~50%: HYP4 ran ~92s/ep (30 epochs in 2772s), HYP5/HYP6 ran ~135s/ep (only 20 epochs in 2700s). Killed 92506 via SIGKILL at 2026-04-30 10:30. **HYP5's failure diagnosis was therefore WRONG** — the +1.6% corpus growth was NOT the actual cause; the orphan bun was. Need a clean re-run (HYP7) to confirm baseline stability post-kill.",
+    "log": "/tmp/nami-lm-phase5-hyp6-1777512668.log",
+    "topic_recall_hits": "not probed (--auto runs persona only)",
+    "epochs_reached": 20,
+    "epoch_time_s": 135.5
   },
   "tried_hypotheses": [
     {"name": "phase-0 v1 raw-markdown", "bpb": 0.1451, "persona": "0/5", "kept": false},
@@ -34,6 +36,7 @@
     {"name": "phase-5 HYP2 +27 variants for 7 garbled topics 30min", "bpb": 0.2952, "persona": "5/5", "kept": false, "note": "topic recall 9/16 but TRADED (different topics work); compute-bound at 30 min"},
     {"name": "phase-5 HYP3 +27 variants 45min budget", "bpb": 0.1729, "persona": "4/5", "kept": true, "note": "topic recall 13/16 (9 verbatim + 4 partial) — best cache yet; bpb -21% vs HYP1"},
     {"name": "phase-5 HYP4 skip auto-memory MEMORY.md + 3 short-form variants", "bpb": 0.1602, "persona": "5/5", "kept": true, "note": "topic recall 14/16, AutoMLIR leak fixed, persona recovered"},
-    {"name": "phase-5 HYP5 +4 HYP11 + 4 Aqua starter variants 45min", "bpb": 0.2179, "persona": "3/5", "kept": false, "note": "REVERT — corpus 1181→1200 cost 33% epochs at fixed budget; under-trained both metrics regressed > 5%"}
+    {"name": "phase-5 HYP5 +4 HYP11 + 4 Aqua starter variants 45min", "bpb": 0.2179, "persona": "3/5", "kept": false, "note": "REVERT — diagnosis WAS 'corpus growth at compute frontier'; ACTUAL cause discovered post-HYP6: orphan bun 92506 stealing 1 CPU core slowed all runs ~50% since Apr 29 23:21"},
+    {"name": "phase-5 HYP6 re-baseline (no code/data change)", "bpb": 0.2197, "persona": "3/5", "kept": false, "note": "REVERT — also CPU-throttled; revealed 92506 orphan as root cause; killed at 10:30; HYP7 needed for post-kill baseline check"}
   ]
 }
