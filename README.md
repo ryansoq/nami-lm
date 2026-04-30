@@ -63,6 +63,18 @@ python3 train.py --probe       # runs the 5 persona probes, prints pass count
 
 Should print `📊 Persona: 5/5 pass` on the current `main` checkpoint.
 
+### Broader eval (Phase 6)
+
+```bash
+python3 eval.py                # 31 probes across 3 categories
+python3 eval.py --quiet        # only the JSON summary line
+```
+
+Runs three probe sets: 5 core persona, 10 extended persona
+(relationships/context), 16 technical topic recall. Emits
+`eval_summary={...}` JSON for the autoresearch loop and exits 0 only
+if persona is 5/5 AND topic recall ≥ 14/16 (the HYP4 gate).
+
 ### Re-train from scratch
 
 ```bash
