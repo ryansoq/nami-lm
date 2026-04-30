@@ -17,16 +17,16 @@
   "current_log": null,
   "last_result": {
     "phase": 5,
-    "hypothesis": "HYP9: tied embedding (drop out_proj, project via x @ token_emb.weight.T). 33% param savings.",
-    "bpb": 0.1993,
+    "hypothesis": "HYP10: AdamW β2 0.999 → 0.95 per GPT-3.",
+    "bpb": 0.3760,
     "persona": "4/5",
     "kept": false,
-    "verdict": "REVERT — tied embedding is faster but converges worse on this corpus",
-    "reason": "Reached ep 30+ in 3636s (~25% faster per epoch than HYP8 — 109s/ep vs 123s/ep). But final bpb 0.1993 vs HYP8 0.1683 = +18% (>5% gate). Persona dropped to 4/5 (Nami是誰? failed). Interpretation: the embedding can't serve dual roles at d_model=96 with only ~28K training tokens — out_proj's 333K dedicated parameters were doing meaningful work. Same conclusion autochat reached at HYP3 (much smaller vocab there but same lesson). Compute savings are real but accuracy cost dominates.",
-    "log": "/tmp/nami-lm-phase5-hyp9-1777525742.log",
+    "verdict": "REVERT — β2=0.95 is too aggressive for our regime",
+    "reason": "Massively worse: bpb 0.3760 vs HYP8 0.1683 = +124%. Persona 4/5 (Nami是誰? failed). The recipe doesn't transfer: GPT-3 used β2=0.95 with batches of millions of tokens, where the variance estimator sees enough samples to be stable even with low smoothing. Our batches are 8 sequences, 25-50 tokens each → ~300 tokens/batch. The β2=0.95 estimator is too jumpy at this batch size — early bpb @ ep10 was 1.04 (HYP8: 0.67) and never caught up. Lesson: large-scale optimizer recipes don't drop in at small scale; β2=0.999 is the right default here.",
+    "log": "/tmp/nami-lm-phase5-hyp10-1777531176.log",
     "topic_recall_hits": "not probed",
-    "epochs_reached": 31,
-    "epoch_time_s": 109
+    "epochs_reached": 30,
+    "epoch_time_s": 113
   },
   "tried_hypotheses": [
     {"name": "phase-0 v1 raw-markdown", "bpb": 0.1451, "persona": "0/5", "kept": false},
@@ -44,6 +44,7 @@
     {"name": "phase-5 HYP6 re-baseline (no code/data change)", "bpb": 0.2197, "persona": "3/5", "kept": false, "note": "REVERT — also CPU-throttled; thought 92506 orphan was root cause; HYP7 disproved that"},
     {"name": "phase-5 HYP7 post-orphan-kill re-baseline", "bpb": 0.1992, "persona": "4/5", "kept": false, "note": "REVERT — orphan only saved 14%; real issue is realistic system load; loss trajectory matches HYP4 but budget cuts at ep 21 not ep 30"},
     {"name": "phase-5 HYP8 TIME_BUDGET 45→60 min", "bpb": 0.1683, "persona": "5/5", "kept": true, "note": "KEEP — baseline restored at realistic load. ep 30 reached, persona 5/5 incl ClawX, bpb within 5% noise of HYP4's quiet-system best"},
-    {"name": "phase-5 HYP9 tied embedding", "bpb": 0.1993, "persona": "4/5", "kept": false, "note": "REVERT — 25% faster epochs (param -33%) but bpb +18%, persona -20%. Same lesson as autochat HYP3: embedding can't serve dual roles at d_model 96 / 28K tokens"}
+    {"name": "phase-5 HYP9 tied embedding", "bpb": 0.1993, "persona": "4/5", "kept": false, "note": "REVERT — 25% faster epochs (param -33%) but bpb +18%, persona -20%. Same lesson as autochat HYP3: embedding can't serve dual roles at d_model 96 / 28K tokens"},
+    {"name": "phase-5 HYP10 AdamW β2 0.95", "bpb": 0.3760, "persona": "4/5", "kept": false, "note": "REVERT — bpb +124% catastrophic. β2=0.95 (GPT-3 recipe) too jumpy on our 300-token-per-batch regime; needs 0.999 default for small noisy batches"}
   ]
 }
