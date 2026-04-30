@@ -11,23 +11,23 @@
   "best_persona_commit": "a9da22a",
   "best_topic_recall": "14/16",
   "best_topic_recall_commit": "c7ecda2",
-  "current_pid": null,
-  "current_started": null,
-  "current_hypothesis": null,
-  "current_log": null,
+  "current_pid": 383299,
+  "current_started": "2026-04-30T21:02:47+08:00",
+  "current_hypothesis": "HYP13: Phase 6 self-distillation v2 — skip-on-collision instead of override. Only the 7 non-colliding dialogues add as new chunks; the 12 that collide with PERSONA_QA / TOPIC_QA are skipped, preserving exact-prefix accuracy from HYP11 baseline. Goal: keep HYP11's 28/31 and add multi-turn capability via the 7 net-new chained sequences. If KEEP, expand dialogues.py with non-colliding first-turns (Phase 6 step 5).",
+  "current_log": "/tmp/nami-lm-phase6-hyp13-1777554167.log",
   "last_result": {
-    "phase": 5,
-    "hypothesis": "HYP11: HYP8 re-run to restore model_weights.json (HYP10 left it at bpb 0.376). No code/data change.",
-    "bpb": 0.1617,
-    "persona": "5/5",
-    "kept": true,
-    "verdict": "KEEP — exact reproduction of HYP8 (seed 42 makes it deterministic)",
-    "reason": "Trained 31 epochs in 3737s (HYP8: 30 epochs in 3697s). bpb 0.1617 (HYP8: 0.1683 — 4% better, the extra epoch). Loss values identical at every checkpoint: ep10/20/30 bpb 0.6680/0.2424/0.1683. Persona 5/5. eval.py first clean run: A. Core 5/5, B. Extended 10/10, C. Topic 13/16 (3 misses: HYP11/Aqua/IREE) → 28/31 = 90.3% any-hit. Phase 6 baseline locked in. Restored model_weights is a working 21MB checkpoint that --chat answers correctly.",
-    "log": "/tmp/nami-lm-phase5-hyp11-1777543257.log",
-    "topic_recall_hits": "13/16 strong (HYP11, Aqua, IREE missing)",
+    "phase": 6,
+    "hypothesis": "HYP12: Phase 6 self-distillation v1. 19 hand-curated dialogues, 12 override existing single-turn entries with chained continuations.",
+    "bpb": 0.1758,
+    "persona": "4/5",
+    "kept": false,
+    "verdict": "REVERT — strict gate fails, but the experiment surfaced real multi-turn capability",
+    "reason": "bpb 0.1758 vs HYP11 0.1617 = +9% (just over 5% gate). eval.py: A. Core 4/5+1p (was 5/5), B. Extended 8/10 (was 10/10) — TWO regressed because the override path replaced exact PERSONA_QA strings with chained continuations that drift past the prefix. C. Topic 14/16 (was 13/16) — IMPROVED by 1, suggesting chained context helps the embedding. Net any-hit 27/31 vs 28/31 (-3.2%, within noise). KEY QUALITATIVE WIN: the model now produces coherent multi-turn continuations — e.g. 'Kaspa是什麼？' → '基於BlockDAG的區塊鏈 用什麼共識？ GhostDag協議 出'. Self-distillation IS working; the trade-off is that the override path also degraded prefix accuracy on the overridden 12 entries. Plan HYP13: remove the override path so dialogues only add, never replace — preserves baseline + adds the 7 non-colliding chained dialogues. Less signal but no regression.",
+    "log": "/tmp/nami-lm-phase6-hyp12-1777547307.log",
+    "topic_recall_hits": "14/16 strong (HYP11/IREE missing — Aqua recovered)",
     "epochs_reached": 31,
-    "epoch_time_s": 121,
-    "eval_summary": {"persona_strong": 5, "persona_partial": 0, "persona_total": 5, "extended_strong": 10, "extended_partial": 0, "extended_total": 10, "topic_strong": 13, "topic_partial": 0, "topic_total": 16, "any_hit_total": 28, "all_total": 31}
+    "epoch_time_s": 119,
+    "eval_summary": {"persona_strong": 4, "persona_partial": 1, "persona_total": 5, "extended_strong": 8, "extended_partial": 0, "extended_total": 10, "topic_strong": 14, "topic_partial": 0, "topic_total": 16, "any_hit_total": 27, "all_total": 31}
   },
   "tried_hypotheses": [
     {"name": "phase-0 v1 raw-markdown", "bpb": 0.1451, "persona": "0/5", "kept": false},
@@ -47,6 +47,7 @@
     {"name": "phase-5 HYP8 TIME_BUDGET 45→60 min", "bpb": 0.1683, "persona": "5/5", "kept": true, "note": "KEEP — baseline restored at realistic load. ep 30 reached, persona 5/5 incl ClawX, bpb within 5% noise of HYP4's quiet-system best"},
     {"name": "phase-5 HYP9 tied embedding", "bpb": 0.1993, "persona": "4/5", "kept": false, "note": "REVERT — 25% faster epochs (param -33%) but bpb +18%, persona -20%. Same lesson as autochat HYP3: embedding can't serve dual roles at d_model 96 / 28K tokens"},
     {"name": "phase-5 HYP10 AdamW β2 0.95", "bpb": 0.3760, "persona": "4/5", "kept": false, "note": "REVERT — bpb +124% catastrophic. β2=0.95 (GPT-3 recipe) too jumpy on our 300-token-per-batch regime; needs 0.999 default for small noisy batches"},
-    {"name": "phase-5 HYP11 HYP8 re-run for baseline weights", "bpb": 0.1617, "persona": "5/5", "kept": true, "note": "KEEP — restored model_weights.json after HYP10 trashed it. eval.py: 5/5 + 10/10 + 13/16 = 28/31 (90.3% any-hit). Exact HYP8 reproduction (seed 42 deterministic)"}
+    {"name": "phase-5 HYP11 HYP8 re-run for baseline weights", "bpb": 0.1617, "persona": "5/5", "kept": true, "note": "KEEP — restored model_weights.json after HYP10 trashed it. eval.py: 5/5 + 10/10 + 13/16 = 28/31 (90.3% any-hit). Exact HYP8 reproduction (seed 42 deterministic)"},
+    {"name": "phase-6 HYP12 self-distill v1 (override on collision)", "bpb": 0.1758, "persona": "4/5", "kept": false, "note": "REVERT — but qualitatively: model produces multi-turn chains now ('Kaspa是什麼? → 基於... 用什麼共識？ GhostDag...'). Override path hurt 12 single-turn prefix matches. HYP13 will skip-instead-of-override."}
   ]
 }
