@@ -17,16 +17,16 @@
   "current_log": null,
   "last_result": {
     "phase": 5,
-    "hypothesis": "HYP8: bump TIME_BUDGET 45→60 min to absorb system-load slowdown. If model is genuinely on HYP4's loss trajectory just budget-cut, ep 30 should reach bpb ~0.16 + persona 5/5.",
-    "bpb": 0.1683,
-    "persona": "5/5",
-    "kept": true,
-    "verdict": "KEEP — baseline restored under realistic load. Reaches ep 30 at bpb 0.1683 (vs HYP4 0.1602, +5.06% noise-floor) and full persona 5/5 (all 5 probes pass including ClawX). vs HYP7 (the de-facto immediate baseline): bpb -16% (0.1992→0.1683), persona +20% (4/5→5/5). Confirms HYP4 trajectory was real and reachable; just needs 60-min budget at current system load.",
-    "reason": "ep 30 reached at 3697s (vs HYP4 at 2531s — 46% slower per-epoch but same trajectory). Loss values track HYP4 exactly: ep20 bpb 0.2424 vs HYP4 0.2349 (+3% noise), ep30 bpb 0.1683 vs HYP4 0.1616 (+4%). Variance well within run-to-run noise. Practical impact: model_weights.json is now usable again — --chat answers ClawX correctly, persona probes 5/5.",
-    "log": "/tmp/nami-lm-phase5-hyp8-1777519961.log",
-    "topic_recall_hits": "not auto-probed; presumed close to HYP4's 14/16 given trajectory match",
-    "epochs_reached": 30,
-    "epoch_time_s": 123
+    "hypothesis": "HYP9: tied embedding (drop out_proj, project via x @ token_emb.weight.T). 33% param savings.",
+    "bpb": 0.1993,
+    "persona": "4/5",
+    "kept": false,
+    "verdict": "REVERT — tied embedding is faster but converges worse on this corpus",
+    "reason": "Reached ep 30+ in 3636s (~25% faster per epoch than HYP8 — 109s/ep vs 123s/ep). But final bpb 0.1993 vs HYP8 0.1683 = +18% (>5% gate). Persona dropped to 4/5 (Nami是誰? failed). Interpretation: the embedding can't serve dual roles at d_model=96 with only ~28K training tokens — out_proj's 333K dedicated parameters were doing meaningful work. Same conclusion autochat reached at HYP3 (much smaller vocab there but same lesson). Compute savings are real but accuracy cost dominates.",
+    "log": "/tmp/nami-lm-phase5-hyp9-1777525742.log",
+    "topic_recall_hits": "not probed",
+    "epochs_reached": 31,
+    "epoch_time_s": 109
   },
   "tried_hypotheses": [
     {"name": "phase-0 v1 raw-markdown", "bpb": 0.1451, "persona": "0/5", "kept": false},
@@ -43,6 +43,7 @@
     {"name": "phase-5 HYP5 +4 HYP11 + 4 Aqua starter variants 45min", "bpb": 0.2179, "persona": "3/5", "kept": false, "note": "REVERT — diagnosis WAS 'corpus growth at compute frontier'; ACTUAL cause discovered post-HYP6: orphan bun 92506 stealing 1 CPU core slowed all runs ~50% since Apr 29 23:21"},
     {"name": "phase-5 HYP6 re-baseline (no code/data change)", "bpb": 0.2197, "persona": "3/5", "kept": false, "note": "REVERT — also CPU-throttled; thought 92506 orphan was root cause; HYP7 disproved that"},
     {"name": "phase-5 HYP7 post-orphan-kill re-baseline", "bpb": 0.1992, "persona": "4/5", "kept": false, "note": "REVERT — orphan only saved 14%; real issue is realistic system load; loss trajectory matches HYP4 but budget cuts at ep 21 not ep 30"},
-    {"name": "phase-5 HYP8 TIME_BUDGET 45→60 min", "bpb": 0.1683, "persona": "5/5", "kept": true, "note": "KEEP — baseline restored at realistic load. ep 30 reached, persona 5/5 incl ClawX, bpb within 5% noise of HYP4's quiet-system best"}
+    {"name": "phase-5 HYP8 TIME_BUDGET 45→60 min", "bpb": 0.1683, "persona": "5/5", "kept": true, "note": "KEEP — baseline restored at realistic load. ep 30 reached, persona 5/5 incl ClawX, bpb within 5% noise of HYP4's quiet-system best"},
+    {"name": "phase-5 HYP9 tied embedding", "bpb": 0.1993, "persona": "4/5", "kept": false, "note": "REVERT — 25% faster epochs (param -33%) but bpb +18%, persona -20%. Same lesson as autochat HYP3: embedding can't serve dual roles at d_model 96 / 28K tokens"}
   ]
 }
