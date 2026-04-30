@@ -6,21 +6,21 @@
   "best_persona": "5/5",
   "best_persona_commit": "a9da22a",
   "best_topic_recall": "14/16",
-  "best_topic_recall_commit": "pending HYP4 commit",
+  "best_topic_recall_commit": "c7ecda2",
   "current_pid": null,
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
   "last_result": {
     "phase": 5,
-    "hypothesis": "HYP4: skip auto-memory MEMORY.md (-17 noisy bullets that shadow TOPIC_QA via first-seen dedup) + 3 short-form variants for numpy-grad/autochat. 45 min budget on 1181 clean chunks.",
-    "bpb": 0.1602,
-    "persona": "5/5",
-    "kept": true,
-    "verdict": "KEEP — bpb -7% vs HYP3 (0.1729→0.1602), persona recovered to 5/5, topic recall 14/16. Critical fix: AutoMLIR no longer leaks 'keep iterating, fall back' feedback — now produces verbatim '用LLM當tuner在MLIR pipeline 上自動找'. Source curation > variant addition for index-shadowed topics.",
-    "reason": "1181 chunks / 77KB / 979K params / ~30 epochs in 2772s. Net wins: AutoMLIR fixed, numpy-grad/autochat short-forms recovered. Minor regressions: HYP11 garbled, Aqua starting prefix drifted ('婕的水系姊妹' instead of '婕的AI夥伴Nami的水系姊妹'). 14/16 = best topic recall in Phase 5 — diminishing returns from here.",
-    "log": "/tmp/nami-lm-phase5-hyp4-1777469893.log",
-    "topic_recall_hits": "14/16 (11 strong + 3 partial)"
+    "hypothesis": "HYP5: +4 HYP11 starter variants and +4 Aqua starter variants reinforcing '婕的 AI 夥伴' prefix. Goal: push topic recall 14/16 → 16/16 by densifying the 2 misses.",
+    "bpb": 0.2179,
+    "persona": "3/5",
+    "kept": false,
+    "verdict": "REVERT — bpb +36% vs HYP4 (0.1602→0.2179), persona regressed 5/5 → 3/5. Both metrics degraded by far more than the 5% threshold. 1200-chunk corpus + 45 min budget = only 20 epochs reached (vs HYP4's ~30) → severely under-trained. The 8 added variants pushed corpus past the compute budget's sweet spot.",
+    "reason": "Lesson: at fixed 45-min budget, +1.6% corpus growth (1181→1200) cost ~33% epochs (30→20). The TOPIC_QA recall trade-off needs source curation (which HYP4 proved) more than variant addition. To push 14/16 → 16/16 we need either (a) longer budget (60 min in HYP9), (b) curate 2 misses' answers themselves rather than add Q-side variants, or (c) regression test before merge so we catch the under-train early.",
+    "log": "/tmp/nami-lm-phase5-hyp5-1777507351.log",
+    "topic_recall_hits": "not probed — auto run only does 5 persona; trust persona 3/5 as proxy"
   },
   "tried_hypotheses": [
     {"name": "phase-0 v1 raw-markdown", "bpb": 0.1451, "persona": "0/5", "kept": false},
@@ -33,6 +33,7 @@
     {"name": "phase-5 HYP1 topic cache 58 Q&As", "bpb": 0.2195, "persona": "4/5", "kept": true, "note": "topic recall 9/16 (was 0/16)"},
     {"name": "phase-5 HYP2 +27 variants for 7 garbled topics 30min", "bpb": 0.2952, "persona": "5/5", "kept": false, "note": "topic recall 9/16 but TRADED (different topics work); compute-bound at 30 min"},
     {"name": "phase-5 HYP3 +27 variants 45min budget", "bpb": 0.1729, "persona": "4/5", "kept": true, "note": "topic recall 13/16 (9 verbatim + 4 partial) — best cache yet; bpb -21% vs HYP1"},
-    {"name": "phase-5 HYP4 skip auto-memory MEMORY.md + 3 short-form variants", "bpb": 0.1602, "persona": "5/5", "kept": true, "note": "topic recall 14/16, AutoMLIR leak fixed, persona recovered"}
+    {"name": "phase-5 HYP4 skip auto-memory MEMORY.md + 3 short-form variants", "bpb": 0.1602, "persona": "5/5", "kept": true, "note": "topic recall 14/16, AutoMLIR leak fixed, persona recovered"},
+    {"name": "phase-5 HYP5 +4 HYP11 + 4 Aqua starter variants 45min", "bpb": 0.2179, "persona": "3/5", "kept": false, "note": "REVERT — corpus 1181→1200 cost 33% epochs at fixed budget; under-trained both metrics regressed > 5%"}
   ]
 }
