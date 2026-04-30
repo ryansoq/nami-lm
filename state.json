@@ -17,16 +17,17 @@
   "current_log": null,
   "last_result": {
     "phase": 5,
-    "hypothesis": "HYP10: AdamW β2 0.999 → 0.95 per GPT-3.",
-    "bpb": 0.3760,
-    "persona": "4/5",
-    "kept": false,
-    "verdict": "REVERT — β2=0.95 is too aggressive for our regime",
-    "reason": "Massively worse: bpb 0.3760 vs HYP8 0.1683 = +124%. Persona 4/5 (Nami是誰? failed). The recipe doesn't transfer: GPT-3 used β2=0.95 with batches of millions of tokens, where the variance estimator sees enough samples to be stable even with low smoothing. Our batches are 8 sequences, 25-50 tokens each → ~300 tokens/batch. The β2=0.95 estimator is too jumpy at this batch size — early bpb @ ep10 was 1.04 (HYP8: 0.67) and never caught up. Lesson: large-scale optimizer recipes don't drop in at small scale; β2=0.999 is the right default here.",
-    "log": "/tmp/nami-lm-phase5-hyp10-1777531176.log",
-    "topic_recall_hits": "not probed",
-    "epochs_reached": 30,
-    "epoch_time_s": 113
+    "hypothesis": "HYP11: HYP8 re-run to restore model_weights.json (HYP10 left it at bpb 0.376). No code/data change.",
+    "bpb": 0.1617,
+    "persona": "5/5",
+    "kept": true,
+    "verdict": "KEEP — exact reproduction of HYP8 (seed 42 makes it deterministic)",
+    "reason": "Trained 31 epochs in 3737s (HYP8: 30 epochs in 3697s). bpb 0.1617 (HYP8: 0.1683 — 4% better, the extra epoch). Loss values identical at every checkpoint: ep10/20/30 bpb 0.6680/0.2424/0.1683. Persona 5/5. eval.py first clean run: A. Core 5/5, B. Extended 10/10, C. Topic 13/16 (3 misses: HYP11/Aqua/IREE) → 28/31 = 90.3% any-hit. Phase 6 baseline locked in. Restored model_weights is a working 21MB checkpoint that --chat answers correctly.",
+    "log": "/tmp/nami-lm-phase5-hyp11-1777543257.log",
+    "topic_recall_hits": "13/16 strong (HYP11, Aqua, IREE missing)",
+    "epochs_reached": 31,
+    "epoch_time_s": 121,
+    "eval_summary": {"persona_strong": 5, "persona_partial": 0, "persona_total": 5, "extended_strong": 10, "extended_partial": 0, "extended_total": 10, "topic_strong": 13, "topic_partial": 0, "topic_total": 16, "any_hit_total": 28, "all_total": 31}
   },
   "tried_hypotheses": [
     {"name": "phase-0 v1 raw-markdown", "bpb": 0.1451, "persona": "0/5", "kept": false},
@@ -45,6 +46,7 @@
     {"name": "phase-5 HYP7 post-orphan-kill re-baseline", "bpb": 0.1992, "persona": "4/5", "kept": false, "note": "REVERT — orphan only saved 14%; real issue is realistic system load; loss trajectory matches HYP4 but budget cuts at ep 21 not ep 30"},
     {"name": "phase-5 HYP8 TIME_BUDGET 45→60 min", "bpb": 0.1683, "persona": "5/5", "kept": true, "note": "KEEP — baseline restored at realistic load. ep 30 reached, persona 5/5 incl ClawX, bpb within 5% noise of HYP4's quiet-system best"},
     {"name": "phase-5 HYP9 tied embedding", "bpb": 0.1993, "persona": "4/5", "kept": false, "note": "REVERT — 25% faster epochs (param -33%) but bpb +18%, persona -20%. Same lesson as autochat HYP3: embedding can't serve dual roles at d_model 96 / 28K tokens"},
-    {"name": "phase-5 HYP10 AdamW β2 0.95", "bpb": 0.3760, "persona": "4/5", "kept": false, "note": "REVERT — bpb +124% catastrophic. β2=0.95 (GPT-3 recipe) too jumpy on our 300-token-per-batch regime; needs 0.999 default for small noisy batches"}
+    {"name": "phase-5 HYP10 AdamW β2 0.95", "bpb": 0.3760, "persona": "4/5", "kept": false, "note": "REVERT — bpb +124% catastrophic. β2=0.95 (GPT-3 recipe) too jumpy on our 300-token-per-batch regime; needs 0.999 default for small noisy batches"},
+    {"name": "phase-5 HYP11 HYP8 re-run for baseline weights", "bpb": 0.1617, "persona": "5/5", "kept": true, "note": "KEEP — restored model_weights.json after HYP10 trashed it. eval.py: 5/5 + 10/10 + 13/16 = 28/31 (90.3% any-hit). Exact HYP8 reproduction (seed 42 deterministic)"}
   ]
 }
