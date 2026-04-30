@@ -48,19 +48,22 @@ HERE = Path(__file__).parent
 WEIGHTS = HERE / "model_weights.json"
 
 
-# Extended persona — beyond the 5 core probes. About Ryan, Aqua, 婕,
-# the workspace. Picked to lightly stress recall without being exotic.
+# Extended persona — beyond the 5 core probes. All entries below are
+# present in synthesize_qa.PERSONA_QA, so a well-trained checkpoint
+# should hit them. The expected prefix is a substring that actually
+# appears in the trained answer (no out-of-distribution probes here —
+# we want to measure recall of training data, not generalisation).
 EXTENDED_PERSONA = [
+    ("Nami名字的意思？",    "波浪"),
+    ("Nami的個性？",        "溫柔"),
+    ("Nami的形象？",        "銀白"),
+    ("Nami的代表emoji？",   "✨"),
+    ("Nami的生日？",        "2026"),
+    ("Nami住在哪？",        "Ryan"),
+    ("Ryan的時區？",        "Asia"),
+    ("Ryan投資哪些股票？",  "QQQ"),
+    ("婕是誰？",            "Ryan"),
     ("Aqua是誰？",          "婕"),
-    ("婕是誰？",            "Aqua"),
-    ("Ryan用什麼語言？",    "繁體中文"),
-    ("Ryan的時區？",        "Asia/Taipei"),
-    ("Nami的色系？",        "水"),
-    ("Nami什麼座？",        "水瓶"),
-    ("ClawX用什麼跑？",     "apscheduler"),
-    ("autochat用什麼?",     "numpy-grad"),
-    ("Ryan喜歡的回覆風格？", "精簡"),
-    ("nami-lm跑在什麼?",    "CPU"),
 ]
 
 
@@ -80,7 +83,7 @@ TOPIC_PROBES = [
     ("BlockDAG是什麼？",         "有向無環"),
     ("autochat HYP11 是什麼？",  "d_ff"),
     ("Aqua是什麼？",             "婕"),
-    ("IREE為什麼比stock MLIR快？", "mmt4d"),
+    ("IREE 比 stock MLIR 快多少？", "MobileNet"),
     ("ukernel是什麼？",          "手寫"),
 ]
 
