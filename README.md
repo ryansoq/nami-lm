@@ -154,13 +154,17 @@ bpb / persona / verdict / log path.
 
 ## Where to start reading
 
-1. [`ARCHITECTURE.md`](ARCHITECTURE.md) — the model, end-to-end with
+1. [`LEARN_TRANSFORMER.md`](LEARN_TRANSFORMER.md) — beginner-friendly
+   walkthrough of what *actually* happens inside the model when you
+   ask it 「Nami 是誰？」. Analogies, step-by-step, no PyTorch needed.
+   Start here if you've never built a transformer before.
+2. [`ARCHITECTURE.md`](ARCHITECTURE.md) — the model, end-to-end with
    tensor shapes and a parameter-count breakdown. Start here if you
-   want to *understand* nami-lm.
-2. [`PHASES.md`](PHASES.md) — the six phases from bootstrap to scaled
+   want to *understand* nami-lm structurally.
+3. [`PHASES.md`](PHASES.md) — the six phases from bootstrap to scaled
    model + eval
-3. [`program.md`](program.md) — per-tick autoresearch loop rules
-4. [`state.json`](state.json) — current phase, in-flight experiment,
+4. [`program.md`](program.md) — per-tick autoresearch loop rules
+5. [`state.json`](state.json) — current phase, in-flight experiment,
    best so far
 
 ## Authors
