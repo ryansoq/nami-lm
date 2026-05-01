@@ -117,6 +117,116 @@ x[3] = token_emb["？"]   + pos_emb[3]   ← 「我是 ？ 而且我排第 3 個
 
 ---
 
+## 3.5 等等，模型怎麼知道輸入有多長？上下文又是什麼？
+
+這三個問題是初學者最常卡住的地方，一次答清楚。
+
+### 3.5.1 模型怎麼「知道」輸入長度？
+
+簡單版的答案是：**它不需要知道**。
+
+模型的 forward 是一個吃 `(T, d_model)` 矩陣的純函數。你丟 4 個 token
+進來，它就跑長度 4；你丟 100 個進來，它就跑長度 100。**T 這個維度
+是「資料形狀」的一部分，不是模型內部的一個變數**。
+
+具體看 nami-lm 的 `forward(token_ids)`：
+
+```python
+def forward(self, token_ids):
+    T = token_ids.shape[-1]                    # 從輸入 shape 拿到長度
+    pos = pos_emb[np.arange(T)]                # 取前 T 個位置的 pos_emb
+    x = token_emb(token_ids) + pos             # 加起來
+    for block in self.blocks:                  # 跑 N 層
+        x = block(x)                           # attention 跟 FFN 都自然支援任意 T
+    logits = out_proj(x)                       # 變成 vocab 分佈
+    return logits
+```
+
+每一步都用 `T` 當 axis 的長度，從來不假設「T 是某個固定值」。
+attention 的 (T, T) 分數矩陣、causal mask 的上三角、softmax 的
+歸一化 —— 全部隨 T 動態大小。
+
+**比喻：** 你寫一個 `def 平均(數字們): return sum / len`。函數不用
+事先「知道」要算 5 個數字還是 50 個 —— 進來幾個就算幾個。
+
+### 3.5.2 那為什麼又有「上下文長度」這個東西？
+
+Transformer 的本體（attention + FFN）對任意長度都成立，但有兩個
+**外部限制**會把你能處理的最大 T 卡住：
+
+**(a) Pos_emb 表的大小。** 模型訓練時規定了 `max_seq_len = 128`，
+所以 `pos_emb` 是 (128, 96)。如果你輸入 130 個 token，第 128 跟 129
+位置沒對應的 `pos_emb[128]` 跟 `pos_emb[129]` 可拿 → IndexError。
+
+**(b) attention 是 O(T²) 的。** scores 矩陣是 (T, T)，T = 1000 就是
+100 萬個格子；T = 100,000 就是 100 億個格子。再聰明的硬體也撐不住。
+所以即使 pos_emb 是用「相對位置」之類的可外推方案（RoPE / ALiBi），
+attention 本身的計算量還是會把你卡住。
+
+這兩個合起來就是「**上下文長度（context length）**」這個概念的來源。
+nami-lm v0.1.0 的 context length = **128 tokens**。
+
+### 3.5.3 各家模型的上下文長度比一比
+
+| 模型 | context length | 怎麼做到 |
+|---|---|---|
+| nami-lm v0.1.0 | 128 | 純 absolute pos_emb，不外推 |
+| GPT-2 (2019)   | 1024 | 同上，更大表 |
+| GPT-3 (2020)   | 2048 → 4096 | 同上 |
+| GPT-4 / Claude 1 | 8K - 32K | RoPE + 訓練時餵長 sequence |
+| 現代 (Claude 4 / Gemini) | 200K - 1M | RoPE + sparse / windowed attention + 訓練改 recipe |
+
+擴 context 不是改一個 hyperparameter 就好 —— 同時要解決
+位置編碼的外推性（absolute 不行）、attention 計算量爆炸、訓練資料
+要有夠長的 sequence。每跳一個量級都是工程戰役。
+
+### 3.5.4 沒那麼多文字 → 補 0 嗎？
+
+**推論時**：沒有「補 0」這回事。你輸入幾個就算幾個。`forward([87, 459, 1240, 71])`
+就是長度 4，不會自動 pad 到 128。
+
+**訓練時的批次（batch）**：這裡才需要面對「同一個 batch 裡
+不同長度的 sequence 怎麼放在同一個矩陣？」的問題。兩個常見作法：
+
+**作法 A：Padding。** 用一個特殊的 `<PAD>` token 把短的補到最長那條
+的長度。然後加一張 attention mask，告訴 attention「這些 PAD 位置
+要忽略掉，不要參與點積」。優點是好寫；缺點是浪費計算 ——
+如果一個 batch 是 [5, 7, 100] 三個句子，你會 pad 成 (3, 100)，
+其中超過一半的格子都是 PAD 在浪費 GPU。
+
+**作法 B：Length-bucket batching。** 訓練前把所有 sequence 依長度
+分桶（bucket），同一桶的 sequence 長度差不多，組成 mini-batch 時
+就**不用 pad**，每個 batch 內所有 sequence 完全等長。這是 autochat
+HYP5 引入的 trick，nami-lm 直接繼承。代價是 dataloader 寫起來
+複雜一點，回報是訓練速度直接快 2 倍（HYP5 確認）。
+
+```
+# nami-lm 的 batching 形式（synthesize_qa.py + train.py 一起完成）
+# - 1190 個 Q&A pairs 依 seq_len 分成 45 個 buckets
+# - 每個 bucket 內配對成 batch_size=8 的 mini-batch
+# - 同一 batch 所有 sequence 長度相同 → 不需要 pad，沒有 mask
+```
+
+**為什麼 nami-lm 選 B？** 我們的 corpus 是 Q&A 短句，median seq_len
+~24，max ~51。如果 padding 到 51，平均浪費 ~50% 計算。bucketing 後
+每個 batch 都剛好填滿，沒有浪費。
+
+**那作法 A 還有人用嗎？** 有 —— 大規模 LLM 預訓練常用一個更聰明的
+變體叫 **packing**：把多個短 sequence「串起來」塞進固定長度的
+slot，中間用 EOS 或者 mask 隔開。這樣既不浪費也不需要複雜 bucketing。
+GPT-3 / Llama 都這樣做。nami-lm 規模太小、沒必要 packing，
+bucketing 已足夠。
+
+### 3.5.5 一句話結論
+
+- 模型 forward 對任意 T 都 work，不用「告訴」它長度。
+- `max_seq_len` 是訓練時定的 pos_emb 上限 + attention 二次方計算量
+  上限，合稱「context length」。
+- 推論時不補零；訓練時看流派 —— nami-lm 用 length-bucket
+  batching（不需要任何 PAD），大型 LLM 通常用 packing。
+
+---
+
 ## 4. 自注意力（Self-Attention）：每個字「轉頭看看別人」
 
 這是 Transformer 的靈魂。前面 3 步只是「準備材料」，從這裡開始才是
