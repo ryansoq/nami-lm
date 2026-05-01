@@ -56,26 +56,51 @@ All commands below assume one of those is set up.
 ### Talk to the trained model (the fun one)
 
 ```bash
-python3 train.py --chat        # interactive REPL — type a 「問題？」, get an answer
+nami-chat                # if pip-installed
+# or:
+python3 train.py --chat  # from clone
 ```
 
-Sample session:
+Real session on the v0.1.0 checkpoint (truncated to the prefix portion
+— see "Known limitations" below):
 
 ```
 🌊 nami-lm chat — type a question, q/quit to exit
 
+❓ 妳是誰？
+🌊 Nami的人類夥伴工程師...
+
 ❓ Nami是誰？
-🌊 厲害的AI工程師夥伴...
+🌊 厲害的AI工程師夥伴Nami...
+
+❓ Ryan是誰？
+🌊 Nami的人類夥伴工程師...
 
 ❓ Kaspa是什麼？
 🌊 基於BlockDAG的區塊鏈...
 
+❓ ClawX是什麼？
+🌊 Claude Code的PTY包裝器...
+
 ❓ mmt4d是什麼？
-🌊 matmul-matmul-2D 4D 資料佈局把矩陣乘切...
+🌊 matmul-matmul-2D 4D...
+
+❓ 婕是誰？
+🌊 Ryan的朋友做電商美編...
+
+❓ Aqua是誰？
+🌊 婕的AI夥伴Nami的水系姊妹...
 ```
 
-Answers come from `model_weights.json` (≈21 MB checkpoint, in repo).
-No API call, no retrieval — pure CPU inference.
+Answers come from `model_weights.json` (~21 MB checkpoint). No API
+call, no retrieval — pure CPU inference, ~10 ms per token on a
+laptop.
+
+**Known limitation:** the model is a *prefix-match cache* — the first
+~10 tokens of each answer are typically correct (matching what was
+trained), then the autoregressive continuation degrades into noise.
+The `nami-eval` harness scores hits on the prefix, not the tail. See
+`ARCHITECTURE.md` for why and `PHASES.md` for what Phase 7+ aims to fix.
 
 ### Verify persona (5-question gate)
 
