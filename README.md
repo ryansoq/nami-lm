@@ -21,15 +21,37 @@ the project advances through six phases laid out in
   ground for the GPTMini architecture and HYP loop discipline; nami-lm
   inherits both
 
-## Usage
+## Install
 
-All commands run with `/usr/bin/python3` (not a venv) and need
-`numpy-grad` on `PYTHONPATH`:
+Two ways to set up — pick one.
+
+**Pip (recommended for users who just want to chat with Nami):**
 
 ```bash
-export PYTHONPATH=~/nami-backpack/projects/numpy-grad
-cd ~/nami-lm
+pip install git+https://github.com/ryansoq/nami-lm.git
+nami-chat        # interactive REPL
+nami-probe       # 5-question persona gate
+nami-eval        # 31-question multi-axis eval
 ```
+
+This pulls `numpy-grad` from GitHub automatically. Note: there is no
+checkpoint shipped with the package yet — you'll need to clone the
+repo and run `train.py` once to produce `model_weights.json`. See
+"Re-train from scratch" below.
+
+**Clone (recommended for learners / contributors):**
+
+```bash
+git clone https://github.com/ryansoq/nami-lm.git
+cd nami-lm
+pip install -e .         # installs as editable, brings numpy-grad too
+# OR — without pip, the original PYTHONPATH way:
+export PYTHONPATH=~/nami-backpack/projects/numpy-grad
+```
+
+All commands below assume one of those is set up.
+
+## Usage
 
 ### Talk to the trained model (the fun one)
 

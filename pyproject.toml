@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nami-lm"
+version = "0.1.0"
+description = "Tiny offline Nami — train a small companion language model on Nami's own memory, pure NumPy + numpy-grad, CPU only."
+readme = "README.md"
+authors = [
+    { name = "Ryan" },
+    { name = "Nami" },
+]
+license = { text = "MIT" }
+requires-python = ">=3.10"
+keywords = ["transformer", "language-model", "numpy", "education", "tiny-gpt", "self-distillation"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Education",
+]
+
+# numpy-grad is not on PyPI; install from GitHub. The model is
+# pure NumPy otherwise; no torch / jax / cuda anywhere.
+dependencies = [
+    "numpy>=1.24",
+    "numpy-grad @ git+https://github.com/ryansoq/numpy-grad.git",
+]
+
+[project.urls]
+Homepage = "https://github.com/ryansoq/nami-lm"
+Architecture = "https://github.com/ryansoq/nami-lm/blob/main/ARCHITECTURE.md"
+
+[project.scripts]
+nami-chat  = "train:chat"
+nami-probe = "train:probe"
+nami-eval  = "eval:main"
+
+[tool.setuptools]
+# Flat layout — keeps train.py readable as a single-file teaching
+# artifact (see ARCHITECTURE.md). Each module ships as a top-level
+# import after `pip install -e .`.
+py-modules = [
+    "train",
+    "eval",
+    "topic_qa",
+    "dialogues",
+    "synthesize_qa",
+    "extract_corpus",
+    "train_bpe",
+]
+
+[tool.setuptools.package-data]
+"*" = ["data/*.jsonl", "tokenizer/*"]
