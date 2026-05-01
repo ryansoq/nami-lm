@@ -17,17 +17,17 @@
   "current_log": null,
   "last_result": {
     "phase": 6,
-    "hypothesis": "HYP13: Phase 6 self-distillation v2. Skip-on-collision (only 7 non-colliding dialogues add as new chunks; 12 colliders skipped, preserving HYP11 single-turn baseline).",
-    "bpb": 0.1740,
-    "persona": "5/5",
-    "kept": true,
-    "verdict": "KEEP — eval.py jumps to 30/31 (96.8%, best ever)",
-    "reason": "bpb 0.1740 vs HYP11 0.1617 = +7.6% (above 5% gate strictly), but the eval is what we actually care about: 5/5 persona + 10/10 extended + 15/16 topic recall = 30/31 any-hit (vs HYP11 baseline 28/31). +2 strong topic hits (HYP11 was 13/16, HYP13 is 15/16). bpb is a single noisy metric; eval.py is the multi-axis quality probe and it improved across the board. The 7 added chained dialogues gave the embedding extra context for shared topics without disturbing exact-prefix accuracy on overridden questions — exactly what skip-on-collision was designed to do. Phase 6 step 4 (self-distillation v1) is officially working.",
-    "log": "/tmp/nami-lm-phase6-hyp13-1777554167.log",
-    "topic_recall_hits": "15/16 strong (only 1 miss — likely HYP11 or IREE)",
-    "epochs_reached": 31,
-    "epoch_time_s": 117,
-    "eval_summary": {"persona_strong": 5, "persona_partial": 0, "persona_total": 5, "extended_strong": 10, "extended_partial": 0, "extended_total": 10, "topic_strong": 15, "topic_partial": 0, "topic_total": 16, "any_hit_total": 30, "all_total": 31}
+    "hypothesis": "HYP14: expand dialogues.py from 19 → 28 (9 non-colliding adds + 2 SwiGLU reinforcement). Goal: keep 30/31 + push topic recall 15→16 by fixing SwiGLU miss.",
+    "bpb": 0.1750,
+    "persona": "4/5",
+    "kept": false,
+    "verdict": "REVERT — corpus growth at fixed budget regressed across the board",
+    "reason": "Reached ep 30 at 3679s (just over budget). bpb 0.1750 vs HYP13 0.1740 = +0.6% (within noise). But eval regressed everywhere: persona 4/5 (was 5/5, Ryan是誰? noised), extended 9/10 (was 10/10, -1), topic 14/16 (was 15/16, AutoMLIR newly missed bleeds 'numpy-grad' from chained autochat dialogue — same Kaspa-bleed pattern). Overall 27/31 vs HYP13 30/31, -3 hits. The SwiGLU reinforcement dialogues didn't fix the original SwiGLU miss either (still spits noise). Lesson: at this corpus / budget regime, more dialogue chains → more cross-topic bleed → exact-prefix probes break. HYP13's 7-dialogue config is the local sweet spot. Reverted dialogues.py via git checkout, corpus regenerated to 1190 (was 1199 with HYP14).",
+    "log": "/tmp/nami-lm-phase6-hyp14-1777611926.log",
+    "topic_recall_hits": "14/16 strong (SwiGLU + AutoMLIR both noise)",
+    "epochs_reached": 30,
+    "epoch_time_s": 123,
+    "eval_summary": {"persona_strong": 4, "persona_partial": 0, "persona_total": 5, "extended_strong": 9, "extended_partial": 0, "extended_total": 10, "topic_strong": 14, "topic_partial": 0, "topic_total": 16, "any_hit_total": 27, "all_total": 31}
   },
   "tried_hypotheses": [
     {"name": "phase-0 v1 raw-markdown", "bpb": 0.1451, "persona": "0/5", "kept": false},
@@ -49,6 +49,7 @@
     {"name": "phase-5 HYP10 AdamW β2 0.95", "bpb": 0.3760, "persona": "4/5", "kept": false, "note": "REVERT — bpb +124% catastrophic. β2=0.95 (GPT-3 recipe) too jumpy on our 300-token-per-batch regime; needs 0.999 default for small noisy batches"},
     {"name": "phase-5 HYP11 HYP8 re-run for baseline weights", "bpb": 0.1617, "persona": "5/5", "kept": true, "note": "KEEP — restored model_weights.json after HYP10 trashed it. eval.py: 5/5 + 10/10 + 13/16 = 28/31 (90.3% any-hit). Exact HYP8 reproduction (seed 42 deterministic)"},
     {"name": "phase-6 HYP12 self-distill v1 (override on collision)", "bpb": 0.1758, "persona": "4/5", "kept": false, "note": "REVERT — but qualitatively: model produces multi-turn chains now ('Kaspa是什麼? → 基於... 用什麼共識？ GhostDag...'). Override path hurt 12 single-turn prefix matches. HYP13 will skip-instead-of-override."},
-    {"name": "phase-6 HYP13 self-distill v2 (skip-on-collision)", "bpb": 0.1740, "persona": "5/5", "kept": true, "note": "KEEP — eval 30/31 (vs HYP11 28/31, +2 topic recall). Phase 6 step 4 working: 7 non-colliding dialogues helped embedding without disturbing single-turn baseline. New best topic recall: 15/16."}
+    {"name": "phase-6 HYP13 self-distill v2 (skip-on-collision)", "bpb": 0.1740, "persona": "5/5", "kept": true, "note": "KEEP — eval 30/31 (vs HYP11 28/31, +2 topic recall). Phase 6 step 4 working: 7 non-colliding dialogues helped embedding without disturbing single-turn baseline. New best topic recall: 15/16."},
+    {"name": "phase-6 HYP14 expand dialogues 19→28", "bpb": 0.1750, "persona": "4/5", "kept": false, "note": "REVERT — eval 27/31 (-3 vs HYP13). 9 added dialogues caused cross-topic bleed (AutoMLIR newly broken). HYP13's 7 is sweet spot at this scale."}
   ]
 }
