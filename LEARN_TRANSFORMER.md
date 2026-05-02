@@ -27,6 +27,39 @@
 **autoregressive language modeling**。你看到的「對話」，其實是
 6,7,8 個字接龍接出來的。
 
+### 全流程鳥瞰（Mermaid 圖，GitHub 自動 render）
+
+```mermaid
+flowchart TD
+    Q["『Nami是誰?』<br/>(4 個字)"]:::input
+    T[1.Tokenize<br/>切字]
+    ID["[87, 459, 1240, 71]<br/>shape: (4,)"]
+    E[2.Embedding<br/>查 token_emb 表]
+    X1["x: (4, 96)"]
+    P[3.+ Pos Emb<br/>加位置]
+    X2["x: (4, 96) 帶位置"]
+    B1[Block 1<br/>LN → MHA → +x → LN → SwiGLU → +x]
+    B2[Block 2<br/>同上]
+    B3[Block 3<br/>同上]
+    X3["最終 hidden: (4, 96)"]
+    O[8.out_proj<br/>· (96, 3471)]
+    L["logits: (4, 3471)"]
+    S[9.softmax + argmax<br/>取最後一個位置]
+    NEXT["next token: 『厲』"]:::output
+
+    Q --> T --> ID --> E --> X1 --> P --> X2
+    X2 --> B1 --> B2 --> B3 --> X3
+    X3 --> O --> L --> S --> NEXT
+    NEXT -.->|10. autoregressive: 接回去重跑 20 次<br/>厲 → 厲害 → 厲害的 → 厲害的AI工程師夥伴| Q
+
+    classDef input fill:#bef,stroke:#268,stroke-width:2px,color:#000
+    classDef output fill:#fbb,stroke:#822,stroke-width:2px,color:#000
+```
+
+> 在 GitHub 上看這個檔案會直接 render 成圖。如果你的 viewer 不支援
+> mermaid，下面每一節都還有對應的 ASCII 圖跟逐步解釋，**內容完全
+> 不依賴這張圖**，跳過它直接讀第 1 節也 OK。
+
 下面我們把這條 0.05 秒的接龍流程，**慢動作分解**。
 
 ---
