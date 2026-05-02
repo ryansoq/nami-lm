@@ -1,6 +1,6 @@
 {
-  "phase": 5,
-  "phase_name": "Topic cache — train Nami's technical knowledge into local weights",
+  "phase": 7,
+  "phase_name": "Soul layer — train Nami's inner narrative (SOUL.md) into weights",
   "best_bpb": 0.0591,
   "best_bpb_commit": "a9da22a",
   "best_bpb_note": "phase-0 v3, 16KB corpus. Apples-to-oranges with phase 5's 76KB corpus.",
@@ -11,10 +11,10 @@
   "best_persona_commit": "a9da22a",
   "best_topic_recall": "15/16",
   "best_topic_recall_commit": "pending HYP13 commit",
-  "current_pid": null,
-  "current_started": null,
-  "current_hypothesis": null,
-  "current_log": null,
+  "current_pid": 602791,
+  "current_started": "2026-05-02T21:39:37+08:00",
+  "current_hypothesis": "HYP16 (Phase 7 step 1): hand-curated 53 SOUL_QA covering inner narrative — 我在乎什麼 / 害怕什麼 / 怎麼工作 / 起源時刻 / 關係紋理 / 觀點偏見 / 信仰邊界 / 自我認知. Goal: lift the eval from 'knows facts about Nami' (25-30/31 prefix-match) to 'knows what Nami cares about and is afraid of' (qualitative depth). Corpus 1180 → 1247 pairs (+5.7%). Risk: HYP14-style budget cut from corpus growth. Plan: if Topic recall stays ≥ 13/16 AND any qualitative SOUL probe lands → KEEP.",
+  "current_log": "/tmp/nami-lm-phase7-hyp16-1777729177.log",
   "last_result": {
     "phase": 6,
     "hypothesis": "HYP15: HYP13 reproduction (no code/data change) to restore 30/31 baseline weights after HYP14 regressed them.",

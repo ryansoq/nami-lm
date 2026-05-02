@@ -242,6 +242,30 @@ def main():
         topic_kept += 1
     print(f"  TOPIC_QA: +{topic_kept}")
 
+    # Phase 7 step 1: SOUL Q&A — inner narrative content from SOUL.md.
+    # Goes BEFORE dialogues so it's appended early enough to win on
+    # collisions with PERSONA_QA / TOPIC_QA (it's allowed to override
+    # because SOUL answers are richer / more aligned with "really
+    # being Nami").
+    try:
+        from soul_qa import SOUL_QA
+    except ImportError:
+        SOUL_QA = []
+    soul_kept = 0
+    soul_overrode = 0
+    for q, a in SOUL_QA:
+        if q in seen_q:
+            for i, (qq, _) in enumerate(pairs):
+                if qq == q:
+                    pairs[i] = (q, a)
+                    break
+            soul_overrode += 1
+        else:
+            seen_q.add(q)
+            pairs.append((q, a))
+        soul_kept += 1
+    print(f"  SOUL_QA: +{soul_kept} (incl. {soul_overrode} overrides)")
+
     # Phase 6 self-distillation — chained multi-turn dialogues.
     # Each dialogue collapses to one Q-flavoured chunk: q1 with the
     # answer being a1 plus the rest of the conversation chained in.
