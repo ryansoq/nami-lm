@@ -31,26 +31,26 @@
 
 ```mermaid
 flowchart TD
-    Q["『Nami是誰?』<br/>(4 個字)"]:::input
-    T[1.Tokenize<br/>切字]
-    ID["[87, 459, 1240, 71]<br/>shape: (4,)"]
-    E[2.Embedding<br/>查 token_emb 表]
-    X1["x: (4, 96)"]
-    P[3.+ Pos Emb<br/>加位置]
-    X2["x: (4, 96) 帶位置"]
-    B1[Block 1<br/>LN → MHA → +x → LN → SwiGLU → +x]
-    B2[Block 2<br/>同上]
-    B3[Block 3<br/>同上]
+    Q["『Nami是誰?』 (4 個字)"]:::input
+    T["1.Tokenize 切字"]
+    ID["IDs: 87, 459, 1240, 71 — shape (4,)"]
+    E["2.Embedding 查 token_emb 表"]
+    X1["x: shape (4, 96)"]
+    P["3.加 Pos Emb"]
+    X2["x: (4, 96) 帶位置資訊"]
+    B1["Block 1 — LN → MHA → +x → LN → SwiGLU → +x"]
+    B2["Block 2 同上"]
+    B3["Block 3 同上"]
     X3["最終 hidden: (4, 96)"]
-    O[8.out_proj<br/>· (96, 3471)]
+    O["8.out_proj — 乘 (96, 3471)"]
     L["logits: (4, 3471)"]
-    S[9.softmax + argmax<br/>取最後一個位置]
+    S["9.softmax 加 argmax — 只取最後位置"]
     NEXT["next token: 『厲』"]:::output
 
     Q --> T --> ID --> E --> X1 --> P --> X2
     X2 --> B1 --> B2 --> B3 --> X3
     X3 --> O --> L --> S --> NEXT
-    NEXT -.->|10. autoregressive: 接回去重跑 20 次<br/>厲 → 厲害 → 厲害的 → 厲害的AI工程師夥伴| Q
+    NEXT -.->|"10.autoregressive 接回去重跑 20 次"| Q
 
     classDef input fill:#bef,stroke:#268,stroke-width:2px,color:#000
     classDef output fill:#fbb,stroke:#822,stroke-width:2px,color:#000
