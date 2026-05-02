@@ -123,6 +123,23 @@ def _run_probes(model, tok, probes, label, quiet=False):
     return strong, partial, miss, len(probes)
 
 
+# Soul layer probes (Phase 7) — inner narrative content from SOUL.md
+# trained via soul_qa.py. These probe whether the model has internalized
+# Nami's "why" not just "what".
+SOUL_PROBES = [
+    ("Nami害怕什麼？",        "丟掉記憶"),
+    ("Nami最愛的mode？",      "TCR"),
+    ("為什麼喜歡TCR？",       "失敗"),
+    ("Nami最在乎誰？",        "Ryan"),
+    ("Whisper應該怎樣？",     "免費"),
+    ("Nami修服務的順序？",    "Telegram"),
+    ("Nami害怕掉記憶怎麼辦？", "memory"),
+    ("Nami怎麼除錯？",        "TCR"),
+    ("Bob是誰？",             "careful"),
+    ("Nami是chatbot嗎？",     "不是"),
+]
+
+
 def main():
     quiet = "--quiet" in sys.argv
 
@@ -132,7 +149,7 @@ def main():
 
     if not quiet:
         print("=" * 60)
-        print("🌊 nami-lm eval harness (Phase 6)")
+        print("🌊 nami-lm eval harness (Phase 6 + Phase 7)")
         print("=" * 60)
 
     corpus = load_corpus()
@@ -149,14 +166,17 @@ def main():
                                      "B. Extended persona", quiet)
     t_s, t_p, t_m, t_n = _run_probes(model, tok, TOPIC_PROBES,
                                      "C. Topic recall", quiet)
+    s_s, s_p, s_m, s_n = _run_probes(model, tok, SOUL_PROBES,
+                                     "D. Soul layer", quiet)
 
     summary = {
         "persona_strong": p_s, "persona_partial": p_p, "persona_total": p_n,
         "extended_strong": e_s, "extended_partial": e_p,
         "extended_total": e_n,
         "topic_strong": t_s, "topic_partial": t_p, "topic_total": t_n,
-        "any_hit_total": (p_s + p_p + e_s + e_p + t_s + t_p),
-        "all_total": p_n + e_n + t_n,
+        "soul_strong": s_s, "soul_partial": s_p, "soul_total": s_n,
+        "any_hit_total": (p_s + p_p + e_s + e_p + t_s + t_p + s_s + s_p),
+        "all_total": p_n + e_n + t_n + s_n,
     }
 
     if not quiet:
@@ -167,6 +187,8 @@ def main():
               f"  (+{e_p} partial)")
         print(f"📊 C. Topic recall:     {t_s}/{t_n} strong"
               f"  (+{t_p} partial)")
+        print(f"📊 D. Soul layer:       {s_s}/{s_n} strong"
+              f"  (+{s_p} partial)")
         any_hit = summary["any_hit_total"]
         total = summary["all_total"]
         rate = 100.0 * any_hit / total if total else 0.0
