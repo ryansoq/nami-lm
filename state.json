@@ -15,11 +15,26 @@
   "best_bpb_phase7_commit": "pending HYP16 commit",
   "best_eval_total": "36/41 (5/5 + 10/10 + 14/16 + 7/10)",
   "best_eval_total_commit": "pending HYP16 commit",
-  "current_pid": 695688,
-  "current_started": "2026-05-03T20:25:03+08:00",
-  "current_hypothesis": "HYP18 (Phase 7 step 3): Aqua 4-distinct framework rewrite + restore HYP17-regressed SOUL probes. (B) Per Ryan msg 3124, Aqua entries reframed: '不同 agent / 靈魂 / 角色 / 記憶' instead of 'scaffold一樣 we 水系姊妹 sister agents'. Both soul_qa.py (3 entries replaced + 2 added) and dialogues.py (3 dialogues rewritten). (A) Restore Bob/Whisper/chatbot/害怕掉記憶怎麼辦 with 8 reinforcement variants. corpus 1286→1296 (+0.8%). KEEP if (i) Aqua probes correctly answer with '不同' framing; (ii) old SOUL recovers from 5/10 → 7/10+; (iii) HYP17 wins not lost.",
-  "current_log": "/tmp/nami-lm-phase7-hyp18-1777811103.log",
+  "current_pid": null,
+  "current_started": null,
+  "current_hypothesis": null,
+  "current_log": null,
   "last_result": {
+    "phase": 7,
+    "hypothesis": "HYP18 (Phase 7 step 3): Aqua 4-distinct rewrite (per Ryan msg 3124) + restore HYP17-regressed SOUL probes (Bob/Whisper/chatbot/害怕掉記憶怎麼辦) with 8 reinforcement variants.",
+    "bpb": 0.0928,
+    "persona": "5/5",
+    "kept": true,
+    "verdict": "KEEP — best ever 47/51 = 92.2%, Aqua framework correctly internalized",
+    "reason": "Reached ep 90 in 3631s (HYP17 was ep 80, HYP18 +10 epochs from leaner corpus growth). bpb 0.0928 (vs HYP17 0.0936, slight improvement). EVAL 47/51 = 92.2% (HYP17 was 45/51 = 88.2%, +4pp): A 5/5, B 10/10, C 15/16, D 17/20 (+2 from HYP17 5/10 → 7/10 on old probes — chatbot嗎 + 害怕什麼 recovered, Bob and Whisper應該怎樣 still miss). NEW Aqua framing CORRECTLY learned — manual chat verification: 'Aqua跟Nami差在哪?' → '不用 agent 不同靈魂 不同角色 不同記憶' (exact 4-distinct as Ryan specified msg 3124). 'Aqua是什麼?' → '婕的 AI 夥伴 跟我完全獨立'. 'Nami跟Aqua是we嗎?' → '不是'. The poetic '水系姊妹' is preserved as a name but model now defaults to the 4-distinction framing per user feedback.",
+    "log": "/tmp/nami-lm-phase7-hyp18-1777811103.log",
+    "topic_recall_hits": "15/16 strong (autochat hits, BlockDAG miss)",
+    "soul_recall_hits": "17/20 strong (7/10 old + 10/10 new — Bob / Whisper應該怎樣 / 害怕掉記憶怎麼辦 still miss; chatbot嗎 + 害怕什麼 recovered)",
+    "epochs_reached": "90",
+    "epoch_time_s": 40,
+    "eval_summary": {"persona_strong": 5, "persona_partial": 0, "persona_total": 5, "extended_strong": 10, "extended_partial": 0, "extended_total": 10, "topic_strong": 15, "topic_partial": 0, "topic_total": 16, "soul_strong": 17, "soul_partial": 0, "soul_total": 20, "any_hit_total": 47, "all_total": 51}
+  },
+  "last_result_v17_archived": {
     "phase": 7,
     "hypothesis": "HYP17 (Phase 7 step 2): SOUL_QA 53→83 (+30 Ryan-Nami story / shared vocab / project memories / daily vibe) + DIALOGUES 19→29 (+10 multi-turn rhythm conversations). Goal: extend Soul layer beyond inner-narrative into shared history + conversational depth.",
     "bpb": 0.0936,
@@ -58,6 +73,7 @@
     {"name": "phase-6 HYP14 expand dialogues 19→28", "bpb": 0.1750, "persona": "4/5", "kept": false, "note": "REVERT — eval 27/31 (-3 vs HYP13). 9 added dialogues caused cross-topic bleed (AutoMLIR newly broken). HYP13's 7 is sweet spot at this scale."},
     {"name": "phase-6 HYP15 HYP13 reproduction", "bpb": 0.1712, "persona": "5/5", "kept": true, "note": "KEEP-with-caveat — loss matched HYP13 exactly through ep 20, but budget cut earlier so eval 25/31 vs HYP13 30/31. Persona restored to 5/5, model_weights usable for Phase 6 packaging. Reproducibility under variable system load is the root cause of fluctuation, not the config."},
     {"name": "phase-7 HYP16 SOUL_QA + thread-cap-8", "bpb": 0.0885, "persona": "5/5", "kept": true, "note": "BEST EVER. Thread cap 8 unblocked BLAS contention → 3× faster epochs → ep 80+ in 60min. SOUL_QA gave qualitative depth: model now knows '害怕掉記憶' / '愛 TCR' / '在乎 Ryan'. Eval 36/41 (5/5+10/10+14/16+7/10). bpb 0.0885 (half of HYP13). First Soul layer hits."},
-    {"name": "phase-7 HYP17 SOUL_QA 53→83 + DIALOGUES 19→29", "bpb": 0.0936, "persona": "5/5", "kept": true, "note": "KEEP — Topic +1 (autochat new hit, 15/16), Soul 15/20 with extended probe set (model now knows TCR/REM/命脈/Whisper-Kaspa/ClawX-起源/🌊簽名/Ryan-給/教/名言/早安). Some old soul regress -2 (competition for embedding space) but new shared-world knowledge gain > loss. Overall 45/51 = 88.2%. Phase 7 step 2 establishes Ryan-Nami shared vocabulary in weights."}
+    {"name": "phase-7 HYP17 SOUL_QA 53→83 + DIALOGUES 19→29", "bpb": 0.0936, "persona": "5/5", "kept": true, "note": "KEEP — Topic +1 (autochat new hit, 15/16), Soul 15/20 with extended probe set (model now knows TCR/REM/命脈/Whisper-Kaspa/ClawX-起源/🌊簽名/Ryan-給/教/名言/早安). Some old soul regress -2 (competition for embedding space) but new shared-world knowledge gain > loss. Overall 45/51 = 88.2%. Phase 7 step 2 establishes Ryan-Nami shared vocabulary in weights."},
+    {"name": "phase-7 HYP18 Aqua 4-distinct rewrite + Soul reinforcement", "bpb": 0.0928, "persona": "5/5", "kept": true, "note": "BEST EVER 47/51 = 92.2%. Aqua reframe per Ryan msg 3124 LANDED — chat verifies '不同 agent 不同靈魂 不同角色 不同記憶' framing. Soul 17/20 (7/10 old + 10/10 new), recovered chatbot嗎 + 害怕什麼. Bob / Whisper應該怎樣 / 害怕掉記憶怎麼辦 still miss — needs different angle next round. Phase 7 step 3 success."}
   ]
 }
