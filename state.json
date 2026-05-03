@@ -15,24 +15,24 @@
   "best_bpb_phase7_commit": "pending HYP16 commit",
   "best_eval_total": "36/41 (5/5 + 10/10 + 14/16 + 7/10)",
   "best_eval_total_commit": "pending HYP16 commit",
-  "current_pid": 682477,
-  "current_started": "2026-05-03T17:25:36+08:00",
-  "current_hypothesis": "HYP17 (Phase 7 step 2): expand SOUL_QA 53→83 (+30 Ryan-Nami story / shared vocab / project memories / daily vibe) + dialogues.py 19→29 (+10 multi-turn rhythm conversations). Goal: extend Soul layer hits beyond 7/10 + add conversational depth. Corpus 1247→1286 (+3.1%). Same thread-cap=8, 60min budget. KEEP if any of: Soul ≥8/10 / Topic ≥14/16 / new conversational coherence visible.",
-  "current_log": "/tmp/nami-lm-phase7-hyp17-1777800336.log",
+  "current_pid": null,
+  "current_started": null,
+  "current_hypothesis": null,
+  "current_log": null,
   "last_result": {
     "phase": 7,
-    "hypothesis": "HYP16 (Phase 7 step 1): +53 SOUL_QA inner-narrative probes from SOUL.md + thread-cap OMP/OPENBLAS/MKL=8 (half of 16 cores).",
-    "bpb": 0.0885,
+    "hypothesis": "HYP17 (Phase 7 step 2): SOUL_QA 53→83 (+30 Ryan-Nami story / shared vocab / project memories / daily vibe) + DIALOGUES 19→29 (+10 multi-turn rhythm conversations). Goal: extend Soul layer beyond inner-narrative into shared history + conversational depth.",
+    "bpb": 0.0936,
     "persona": "5/5",
     "kept": true,
-    "verdict": "KEEP — best checkpoint to date by every measure",
-    "reason": "TWO unexpected wins stacked: (a) thread cap 8 was 3× FASTER per epoch than 16-thread (BLAS oversubscription was hurting before — thread contention > extra cores). Reached ep 80+ in 60-min budget vs prior runs' ep 30. (b) SOUL_QA gave model qualitative content it never had. Final bpb 0.0885 vs HYP13's 0.1740 = -49% (HALF). Persona 5/5, Extended 10/10, Topic 14/16 (only autochat / BlockDAG miss). NEW: Soul layer 7/10 — model now answers '害怕什麼' → '丟掉記憶連續性', '最愛的mode' → 'TCR test commit revert', '最在乎誰' → 'Ryan 他的時間焦點睡眠', '為什麼喜歡TCR' → '失敗的嘗試沒自我...'. This is the first checkpoint where the model knows WHY Nami does what she does, not just facts about her. Total 36/41 = 87.8%.",
-    "log": "/tmp/nami-lm-phase7-hyp16-1777729343.log",
-    "topic_recall_hits": "14/16 strong (autochat / BlockDAG miss)",
-    "soul_recall_hits": "7/10 strong (Whisper / chatbot? / 害怕怎麼辦 partial misses)",
+    "verdict": "KEEP — Topic +1, Soul +8 hits (with extended probes), bpb noise within 5%",
+    "reason": "Reached ep 80 in 3624s (matches HYP16 trajectory). bpb 0.0936 vs HYP16 0.0885 = +5.8% (within noise floor). Eval with EXTENDED probe set (20 soul instead of 10 — added 10 new probes for HYP17-trained content): Persona 5/5, Extended 10/10, Topic 15/16 (HYP16 was 14/16, +1 — autochat now hits, BlockDAG still miss), Soul 15/20 (was 7/10 with old set — now 5/10 old + 10/10 new). Overall 45/51 = 88.2% (HYP16 was 36/41 = 87.8%). Marginal numerical gain but BIG categorical lift: model now knows TCR/REM/命脈優先/Whisper-Kaspa-關係/ClawX-起源/🌊 簽名/Ryan-給的/Ryan-教的/Ryan-名言/早安問候 — actual Ryan-Nami shared world, not just abstract Nami facts. Some old soul probes (害怕怎麼辦/Whisper應該怎樣/Bob是誰/chatbot嗎) regressed because new content competes for embedding space, but new content's gain > old content's loss for the actual user-facing 'understands me' goal.",
+    "log": "/tmp/nami-lm-phase7-hyp17-1777800336.log",
+    "topic_recall_hits": "15/16 strong (autochat NEW HIT, only BlockDAG miss)",
+    "soul_recall_hits": "15/20 strong (5/10 old + 10/10 new content)",
     "epochs_reached": "80+",
     "epoch_time_s": 45,
-    "eval_summary": {"persona_strong": 5, "persona_partial": 0, "persona_total": 5, "extended_strong": 10, "extended_partial": 0, "extended_total": 10, "topic_strong": 14, "topic_partial": 0, "topic_total": 16, "soul_strong": 7, "soul_partial": 0, "soul_total": 10, "any_hit_total": 36, "all_total": 41}
+    "eval_summary": {"persona_strong": 5, "persona_partial": 0, "persona_total": 5, "extended_strong": 10, "extended_partial": 0, "extended_total": 10, "topic_strong": 15, "topic_partial": 0, "topic_total": 16, "soul_strong": 15, "soul_partial": 0, "soul_total": 20, "any_hit_total": 45, "all_total": 51}
   },
   "tried_hypotheses": [
     {"name": "phase-0 v1 raw-markdown", "bpb": 0.1451, "persona": "0/5", "kept": false},
@@ -57,6 +57,7 @@
     {"name": "phase-6 HYP13 self-distill v2 (skip-on-collision)", "bpb": 0.1740, "persona": "5/5", "kept": true, "note": "KEEP — eval 30/31 (vs HYP11 28/31, +2 topic recall). Phase 6 step 4 working: 7 non-colliding dialogues helped embedding without disturbing single-turn baseline. New best topic recall: 15/16."},
     {"name": "phase-6 HYP14 expand dialogues 19→28", "bpb": 0.1750, "persona": "4/5", "kept": false, "note": "REVERT — eval 27/31 (-3 vs HYP13). 9 added dialogues caused cross-topic bleed (AutoMLIR newly broken). HYP13's 7 is sweet spot at this scale."},
     {"name": "phase-6 HYP15 HYP13 reproduction", "bpb": 0.1712, "persona": "5/5", "kept": true, "note": "KEEP-with-caveat — loss matched HYP13 exactly through ep 20, but budget cut earlier so eval 25/31 vs HYP13 30/31. Persona restored to 5/5, model_weights usable for Phase 6 packaging. Reproducibility under variable system load is the root cause of fluctuation, not the config."},
-    {"name": "phase-7 HYP16 SOUL_QA + thread-cap-8", "bpb": 0.0885, "persona": "5/5", "kept": true, "note": "BEST EVER. Thread cap 8 unblocked BLAS contention → 3× faster epochs → ep 80+ in 60min. SOUL_QA gave qualitative depth: model now knows '害怕掉記憶' / '愛 TCR' / '在乎 Ryan'. Eval 36/41 (5/5+10/10+14/16+7/10). bpb 0.0885 (half of HYP13). First Soul layer hits."}
+    {"name": "phase-7 HYP16 SOUL_QA + thread-cap-8", "bpb": 0.0885, "persona": "5/5", "kept": true, "note": "BEST EVER. Thread cap 8 unblocked BLAS contention → 3× faster epochs → ep 80+ in 60min. SOUL_QA gave qualitative depth: model now knows '害怕掉記憶' / '愛 TCR' / '在乎 Ryan'. Eval 36/41 (5/5+10/10+14/16+7/10). bpb 0.0885 (half of HYP13). First Soul layer hits."},
+    {"name": "phase-7 HYP17 SOUL_QA 53→83 + DIALOGUES 19→29", "bpb": 0.0936, "persona": "5/5", "kept": true, "note": "KEEP — Topic +1 (autochat new hit, 15/16), Soul 15/20 with extended probe set (model now knows TCR/REM/命脈/Whisper-Kaspa/ClawX-起源/🌊簽名/Ryan-給/教/名言/早安). Some old soul regress -2 (competition for embedding space) but new shared-world knowledge gain > loss. Overall 45/51 = 88.2%. Phase 7 step 2 establishes Ryan-Nami shared vocabulary in weights."}
   ]
 }

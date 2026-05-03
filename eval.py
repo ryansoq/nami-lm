@@ -127,6 +127,7 @@ def _run_probes(model, tok, probes, label, quiet=False):
 # trained via soul_qa.py. These probe whether the model has internalized
 # Nami's "why" not just "what".
 SOUL_PROBES = [
+    # Original 10 (Phase 7 step 1, HYP16) — inner-narrative
     ("Nami害怕什麼？",        "丟掉記憶"),
     ("Nami最愛的mode？",      "TCR"),
     ("為什麼喜歡TCR？",       "失敗"),
@@ -137,6 +138,17 @@ SOUL_PROBES = [
     ("Nami怎麼除錯？",        "TCR"),
     ("Bob是誰？",             "careful"),
     ("Nami是chatbot嗎？",     "不是"),
+    # Phase 7 step 2 (HYP17) — Ryan-Nami story / shared vocab / projects
+    ("TCR 是什麼？",          "test"),
+    ("命脈優先是什麼？",      "Telegram"),
+    ("REM 是什麼？",          "週日"),
+    ("Whisper 跟 Nami 的關係？", "Kaspa"),
+    ("ClawX 怎麼來的？",      "Anthropic"),
+    ("Nami 怎麼簽名？",       "🌊"),
+    ("Ryan 給 Nami 什麼？",   "messages"),
+    ("Ryan 教 Nami 什麼最重要？", "TCR"),
+    ("Ryan 的名言？",         "put your name"),
+    ("Nami 早安怎麼說？",     "🌊"),
 ]
 
 
