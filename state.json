@@ -1,8 +1,8 @@
 {
   "phase": 7,
   "phase_name": "Soul layer — train Nami's inner narrative (SOUL.md) into weights",
-  "best_bpb": 0.0802,
-  "best_bpb_commit": "951d522",
+  "best_bpb": 0.0745,
+  "best_bpb_commit": "PENDING",
   "best_bpb_note": "phase-0 v3, 16KB corpus. Apples-to-oranges with phase 5's 76KB corpus.",
   "best_bpb_phase5": 0.1602,
   "best_bpb_phase5_commit": "c7ecda2",
@@ -15,33 +15,33 @@
   "best_bpb_phase7_commit": "pending HYP16 commit",
   "best_eval_total": "36/41 (5/5 + 10/10 + 14/16 + 7/10)",
   "best_eval_total_commit": "pending HYP16 commit",
-  "current_pid": 792865,
-  "current_started": "2026-05-05T15:31:48.585474+08:00",
-  "current_hypothesis": "HYP21-retry (Phase 7 step 6r): bias=False on MHA + LayerNorm. First attempt PID 788871 finished training (ep 140 / bpb 0.0755 / persona 5/5) but crashed at save() due to None.data on bias=False fields. Bug fixed in train.py. Re-running same config.",
-  "current_log": "/tmp/nami-lm-phase7-hyp21r-1777966293.log",
+  "current_pid": null,
+  "current_started": null,
+  "current_hypothesis": null,
+  "current_log": null,
   "last_result": {
     "phase": 7,
-    "hypothesis": "HYP20 (Phase 7 step 5): TIME_BUDGET 60→90min, HYP18 corpus unchanged. 假設: more epoch on existing anchors will deepen them without corpus dilution.",
-    "bpb": 0.0802,
+    "hypothesis": "HYP21 (Phase 7 step 6): bias=False on MHA + LayerNorm.",
+    "bpb": 0.0745,
     "persona": "5/5",
     "kept": true,
-    "verdict": "KEEP — NEW BEST 48/51 = 94.1% (+1 vs HYP18 47/51), bpb 0.0802 (-13.6% vs HYP18 0.0928)",
-    "reason": "90min budget pushed ep 90 → ep 135. Topic recall 16/16 (recovered BlockDAG) and extended 10/10 fully maintained. Soul slight -1 (17→16 strong, +1 partial) — within 5% noise tolerance. Multi-axis KEEP criteria met: bpb improved AND eval improved AND persona unchanged.",
-    "log": "/tmp/nami-lm-phase7-hyp20-1777953634.log",
+    "verdict": "KEEP — bpb -7.1% (NEW BEST), eval 47/51 (-1 hit vs HYP20 48/51, within -5pp tolerance)",
+    "reason": "Multi-axis: bpb improved AND persona unchanged. eval -1.9pp absolute = -2.08% relative, within hard constraint -5pp. Topic 16→15 lost BlockDAG; Soul 16+1p → 17 strong. The shift suggests bias=False makes model prefer soul (nuanced inner narrative) over topic (factual phrases) — not strictly worse, a different lever profile. Infrastructure gain: numpy-grad LN + Linear now support bias=False, save/load handles None tolerantly.",
+    "log": "/tmp/nami-lm-phase7-hyp21r-1777963133.log",
     "eval_summary": {
       "persona_strong": 5,
       "extended_strong": 10,
       "extended_total": 10,
-      "topic_strong": 16,
+      "topic_strong": 15,
       "topic_total": 16,
-      "soul_strong": 16,
-      "soul_partial": 1,
+      "soul_strong": 17,
+      "soul_partial": 0,
       "soul_total": 20,
-      "any_hit_total": 48,
+      "any_hit_total": 47,
       "all_total": 51
     },
-    "epochs_reached": 135,
-    "epoch_time_s": 40
+    "epochs_reached": 140,
+    "epoch_time_s": 38
   },
   "last_result_v17_archived": {
     "phase": 7,
@@ -261,6 +261,12 @@
       "phase": 7,
       "kept": false,
       "summary": "bias=False trained ep 140 / bpb 0.0755 / persona 5/5 — but save() crashed on b.ln1.beta=None. Fixed train.py:save/load to tolerate None. Retry as HYP21-retry."
+    },
+    {
+      "id": "HYP21",
+      "phase": 7,
+      "kept": true,
+      "summary": "bias=False on MHA + LN, ep 140 / bpb 0.0745 (NEW BEST -7.1%) / eval 47/51 (-1 vs HYP20). KEEP per multi-axis (eval -1.9pp within -5pp tolerance)."
     }
   ],
   "best_eval_score": 48,
