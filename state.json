@@ -1,6 +1,6 @@
 {
-  "phase": 7,
-  "phase_name": "Soul layer — train Nami's inner narrative (SOUL.md) into weights",
+  "phase": 8,
+  "phase_name": "Conversational + KV cache",
   "best_bpb": 0.0745,
   "best_bpb_commit": "PENDING",
   "best_bpb_note": "phase-0 v3, 16KB corpus. Apples-to-oranges with phase 5's 76KB corpus.",

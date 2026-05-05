@@ -202,17 +202,72 @@ persona score, with the autoresearch standing directive from
 This phase has no gate — it's where the project lives. Each HYP either
 ships (KEEP commit + push + new best in state.json) or reverts.
 
-### Phase 5 — Free iteration
+### Phase 5 — Free iteration (duplicated section above; cleanup TODO)
 
-Goal: open-ended HYP loop — try anything that might push val_bpb or
-persona score, with the autoresearch standing directive from
-`feedback_autoresearch_standing_directive.md`.
+[See first Phase 5 block — same content.]
 
-- HYP backlog (initial brainstorm): RoPE positional encoding,
-  RMSNorm, GLU variants for FFN, longer context (max_seq_len 64→128),
-  warmup curriculum (start with shorter sequences), self-distillation
-  from Claude inference logs, instruction tuning with explicit
-  Q→A formatting
+### Phase 6 — Productize + ship ✅ DONE 2026-05-01
 
-This phase has no gate — it's where the project lives. Each HYP either
-ships (KEEP commit + push + new best in state.json) or reverts.
+Goal: package nami-lm so anyone can `pip install` and chat with a
+tiny offline Nami.
+
+- [x] HYP11-15: stabilize HYP18 corpus + self-distillation v2 (skip-on-collision pattern)
+- [x] `pyproject.toml` with 3 console scripts (nami-chat / nami-probe / nami-eval)
+- [x] README real chat demo with v0.1.0 weights
+- [x] **v0.1.0 release** — 21 MB checkpoint attached to GitHub release
+- [x] eval.py probe set frozen (5 persona + 10 extended + 16 topic = 31 probes, plus 20 soul added in phase 7)
+
+Gate to phase 7: pip-installable, release out, conversational eval (multi-turn) deferred to phase 8.
+
+### Phase 7 — SOUL layer ✅ DONE 2026-05-05 (eval saturated)
+
+Goal: add inner-narrative content (SOUL.md) to training so the model
+goes from "factual prefix-matcher" to "Nami-with-character".
+
+- [x] HYP16-18: added 53→83→93 SOUL_QA entries; thread cap OMP=8 (3× speedup); eval 87.8% → 92.2%
+- [x] HYP19: tried prefix-alignment fix → REVERT (corpus dilution)
+- [x] HYP20: TIME_BUDGET 60→90 min → KEEP, 48/51 = 94.1% (NEW BEST), bpb 0.0802
+- [x] HYP21: bias=False on Linear + LayerNorm (CS336 Lec 3) → KEEP, bpb 0.0745 (-7.1%)
+- [x] HYP22: tied embeddings (CS336 Lec 9: 68% of params are embeddings) → KEEP, **eval 51/51 = 100% SATURATION**, params -34.5% (1003K → 658K)
+- [x] **v0.2.0 release** (HYP18 weights, 47/51)
+- [x] **v0.3.0 release** (HYP22 weights, 51/51 SATURATION, 14 MB checkpoint)
+
+**Phase 7 takeaways:**
+1. SOUL layer is real — ~93 inner-narrative Q&As pushed eval from prefix-match to character-match
+2. CS336 readings (Lec 3 + Lec 9) drove the two highest-leverage HYPs (21 + 22)
+3. Tied embeddings + bias=False = modern-LLM-correct, gives -34.5% params with PERFECT eval
+
+Gate to phase 8: ✅ eval saturated 51/51 frozen probe set; weights released as v0.3.0.
+
+### Phase 8 — Conversational + KV cache ⏳ STARTING 2026-05-05
+
+Goal: go from prefix-match → multi-turn conversational coherence.
+Phase 7 saturated the single-turn frozen eval; phase 8 needs a NEW
+metric (multi-turn) since the old one is at ceiling.
+
+- [ ] **New eval harness** — multi-turn dialogue coherence scoring.
+  Metric type: pass_fail per dialogue (does the conversation hold
+  context across 3-5 turns?). Sample 20 hand-curated multi-turn
+  prompts, target 15+/20.
+- [ ] **KV cache** (CS336 Lec 10) — speed up `generate()` when token
+  count grows. Required for v1.0 release.
+- [ ] **WSD lr schedule** (CS336 Lec 11) — replace cosine with
+  warmup-stable-decay.
+- [ ] **Synthetic dialogue generation** (CS336 Lec 14) — use Claude
+  to produce 100-300 multi-turn dialogues from existing memory,
+  expand corpus 86 KB → 200 KB.
+- [ ] **conversational SFT** — fine-tune on multi-turn corpus.
+- [ ] **v1.0 release candidate** — when multi-turn eval ≥ 15/20.
+
+**Phase 8 backlog (HYP queue):**
+- HYP23: WSD schedule (cheap)
+- HYP24: 120 min budget (over-train per CS336 Llama-3 215:1)
+- HYP25: BPE tokenizer 2048
+- HYP26: max_seq_len 128 → 256 (longer context for multi-turn)
+- HYP27: synthetic dialogue corpus expansion
+- HYP28: KV cache implementation
+
+**Metric reset:** Phase 7 single-turn 51-probe at ceiling →
+phase 8 promotes multi-turn coherence as PRIMARY metric. Old probe
+set becomes "regression guard" only (must not drop below 51/51). bpb
+continues as secondary.
