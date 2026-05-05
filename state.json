@@ -15,10 +15,10 @@
   "best_bpb_phase7_commit": "pending HYP16 commit",
   "best_eval_total": "36/41 (5/5 + 10/10 + 14/16 + 7/10)",
   "best_eval_total_commit": "pending HYP16 commit",
-  "current_pid": null,
-  "current_started": null,
-  "current_hypothesis": null,
-  "current_log": null,
+  "current_pid": 792865,
+  "current_started": "2026-05-05T15:31:48.585474+08:00",
+  "current_hypothesis": "HYP21-retry (Phase 7 step 6r): bias=False on MHA + LayerNorm. First attempt PID 788871 finished training (ep 140 / bpb 0.0755 / persona 5/5) but crashed at save() due to None.data on bias=False fields. Bug fixed in train.py. Re-running same config.",
+  "current_log": "/tmp/nami-lm-phase7-hyp21r-1777966293.log",
   "last_result": {
     "phase": 7,
     "hypothesis": "HYP20 (Phase 7 step 5): TIME_BUDGET 60→90min, HYP18 corpus unchanged. 假設: more epoch on existing anchors will deepen them without corpus dilution.",
@@ -255,6 +255,12 @@
       "phase": 7,
       "kept": true,
       "summary": "90min budget unchanged corpus → ep 135, NEW BEST 48/51 = 94.1%, bpb 0.0802 (-13.6%)."
+    },
+    {
+      "id": "HYP21-crashed",
+      "phase": 7,
+      "kept": false,
+      "summary": "bias=False trained ep 140 / bpb 0.0755 / persona 5/5 — but save() crashed on b.ln1.beta=None. Fixed train.py:save/load to tolerate None. Retry as HYP21-retry."
     }
   ],
   "best_eval_score": 48,

@@ -155,9 +155,11 @@ class BPETokenizer:
 # =============================================================================
 class TransformerBlock(Module):
     def __init__(self, d_model, d_ff, num_heads):
-        self.ln1 = LayerNorm(d_model)
-        self.mha = MultiHeadAttention(d_model, num_heads)
-        self.ln2 = LayerNorm(d_model)
+        # HYP21: bias=False on LN + MHA (per Stanford CS336 Lec 3 / huangserva).
+        # SwiGLU was already bias-free; head + out_proj already bias-free.
+        self.ln1 = LayerNorm(d_model, bias=False)
+        self.mha = MultiHeadAttention(d_model, num_heads, bias=False)
+        self.ln2 = LayerNorm(d_model, bias=False)
         self.ff = SwiGLU(d_model, d_ff)
 
     def forward(self, x):
@@ -252,19 +254,22 @@ class GPTMini(Module):
             "blocks": [],
         }
         for b in self.blocks:
+            # HYP21: handle bias=False (None values for beta/Wq_b/etc)
+            def _opt(t):
+                return t.data.tolist() if t is not None else None
             state["blocks"].append({
                 "ln1_g": b.ln1.gamma.data.tolist(),
-                "ln1_b": b.ln1.beta.data.tolist(),
+                "ln1_b": _opt(b.ln1.beta),
                 "ln2_g": b.ln2.gamma.data.tolist(),
-                "ln2_b": b.ln2.beta.data.tolist(),
+                "ln2_b": _opt(b.ln2.beta),
                 "Wq": b.mha.Wq.W.data.tolist(),
                 "Wk": b.mha.Wk.W.data.tolist(),
                 "Wv": b.mha.Wv.W.data.tolist(),
                 "Wo": b.mha.Wo.W.data.tolist(),
-                "Wq_b": b.mha.Wq.b.data.tolist(),
-                "Wk_b": b.mha.Wk.b.data.tolist(),
-                "Wv_b": b.mha.Wv.b.data.tolist(),
-                "Wo_b": b.mha.Wo.b.data.tolist(),
+                "Wq_b": _opt(b.mha.Wq.b),
+                "Wk_b": _opt(b.mha.Wk.b),
+                "Wv_b": _opt(b.mha.Wv.b),
+                "Wo_b": _opt(b.mha.Wo.b),
                 "ff_w1": b.ff.w1.W.data.tolist(),
                 "ff_gate": b.ff.gate.W.data.tolist(),
                 "ff_w2": b.ff.w2.W.data.tolist(),
@@ -285,18 +290,24 @@ class GPTMini(Module):
         m.head.layers[0].W.data = np.array(state["head_w1"])
         m.head.layers[2].W.data = np.array(state["head_w2"])
         for b, st in zip(m.blocks, state["blocks"]):
+            # HYP21: tolerate bias=None (loaded as null in JSON)
+            def _maybe_set(target, key):
+                v = st.get(key)
+                if v is None or target is None:
+                    return
+                target.data = np.array(v)
             b.ln1.gamma.data = np.array(st["ln1_g"])
-            b.ln1.beta.data = np.array(st["ln1_b"])
+            _maybe_set(b.ln1.beta, "ln1_b")
             b.ln2.gamma.data = np.array(st["ln2_g"])
-            b.ln2.beta.data = np.array(st["ln2_b"])
+            _maybe_set(b.ln2.beta, "ln2_b")
             b.mha.Wq.W.data = np.array(st["Wq"])
             b.mha.Wk.W.data = np.array(st["Wk"])
             b.mha.Wv.W.data = np.array(st["Wv"])
             b.mha.Wo.W.data = np.array(st["Wo"])
-            b.mha.Wq.b.data = np.array(st["Wq_b"])
-            b.mha.Wk.b.data = np.array(st["Wk_b"])
-            b.mha.Wv.b.data = np.array(st["Wv_b"])
-            b.mha.Wo.b.data = np.array(st["Wo_b"])
+            _maybe_set(b.mha.Wq.b, "Wq_b")
+            _maybe_set(b.mha.Wk.b, "Wk_b")
+            _maybe_set(b.mha.Wv.b, "Wv_b")
+            _maybe_set(b.mha.Wo.b, "Wo_b")
             b.ff.w1.W.data = np.array(st["ff_w1"])
             b.ff.gate.W.data = np.array(st["ff_gate"])
             b.ff.w2.W.data = np.array(st["ff_w2"])
