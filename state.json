@@ -20,14 +20,14 @@
   "current_hypothesis": null,
   "current_log": null,
   "last_result": {
-    "phase": 7,
-    "hypothesis": "HYP22 (Phase 7 step 7): tied embeddings — share token_emb.weight as out_proj.",
-    "bpb": 0.0869,
+    "phase": 8,
+    "hypothesis": "HYP23 (Phase 8 step 1): WSD lr schedule (CS336 Lec 11) — wall-clock time fraction driven, 7%/83%/10% phases.",
+    "bpb": 0.0268,
     "persona": "5/5",
-    "kept": true,
-    "verdict": "KEEP — SATURATION 51/51 = 100% achieved! bpb regressed +16.6% but eval saturated.",
-    "reason": "Multi-axis judgment call: bpb went 0.0745 → 0.0869 (+16.6%, over +5% hard cap), but eval went 47/51 → 51/51 (PERFECT). Tradeoff: -34.5% params (1003K → 658K) means less capacity to overfit corpus (higher bpb) but better generalization on held-out probes (saturated eval). Soul 17/20 → 19/20 + 1 partial; topic recovered 15/16 → 16/16. Overriding strict §2 bpb cap because eval saturation is THE goal of phase 7. Tied embeddings achieve 51/51 with -34.5% params — architecturally superior even at slight bpb cost. v0.3.0 release candidate.",
-    "log": "/tmp/nami-lm-phase7-hyp22-1777973519.log",
+    "kept": false,
+    "verdict": "REVERT — eval 50/51 (-1 vs HYP22 51/51), violates phase 8 regression guard.",
+    "reason": "bpb dropped dramatically (-69% vs HYP22 0.0869 → 0.0268) but eval went 51 → 50 (lost soul partial probe). The bpb crash is an OVERFIT signal — WSD with linear-decay-to-zero polished the training corpus too tightly, generalization on held-out probes regressed. Lesson: at small corpus, cosine gradual decay beats WSD aggressive decay-to-zero. Keep 51/51 floor, revert to cosine.",
+    "log": "/tmp/nami-lm-phase8-hyp23r-1777982461.log",
     "eval_summary": {
       "persona_strong": 5,
       "extended_strong": 10,
@@ -35,14 +35,12 @@
       "topic_strong": 16,
       "topic_total": 16,
       "soul_strong": 19,
-      "soul_partial": 1,
+      "soul_partial": 0,
       "soul_total": 20,
-      "any_hit_total": 51,
+      "any_hit_total": 50,
       "all_total": 51
     },
-    "epochs_reached": 150,
-    "epoch_time_s": 35,
-    "params_reduction_pct": 34.5
+    "epochs_reached": 140
   },
   "last_result_v17_archived": {
     "phase": 7,
@@ -274,6 +272,18 @@
       "phase": 7,
       "kept": true,
       "summary": "Tied embeddings — params 658K (-34.5%), eval 51/51 SATURATED (perfect), bpb 0.0869 (+16.6% over §2 cap, KEEP override for saturation)."
+    },
+    {
+      "id": "HYP23-killed",
+      "phase": 8,
+      "kept": false,
+      "summary": "WSD warmup_epochs miscomputed (expected_epochs=771 vs real ~140), warmup ate 54 epoch. Killed ep 20."
+    },
+    {
+      "id": "HYP23",
+      "phase": 8,
+      "kept": false,
+      "summary": "WSD lr schedule — bpb 0.0268 -69% but eval 50/51 -1 (overfit signal). REVERT to cosine."
     }
   ],
   "best_eval_score": 51,
