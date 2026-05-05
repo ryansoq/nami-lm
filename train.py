@@ -188,7 +188,11 @@ class GPTMini(Module):
                        for _ in range(num_layers)]
         self.head = Sequential(Linear(d_model, d_ff, bias=False), GELU(),
                                Linear(d_ff, d_model, bias=False))
-        self.out_proj = Linear(d_model, vocab_size, bias=False)
+        # HYP22 (tied embeddings): out_proj weight is shared with token_emb.
+        # Forward computes logits = x @ token_emb.weight.T directly. Saves
+        # 345K params (vocab_size × d_model) — 34% of total model size.
+        # No separate out_proj layer.
+        self.out_proj = None
 
         # HYP2 (autochat) Xavier init alignment — sqrt(2/(in+out))
         self._apply_xavier_init_to_linears()
@@ -200,7 +204,7 @@ class GPTMini(Module):
             linear.W.data = (np.random.randn(in_d, out_d) * scale).astype(
                 linear.W.data.dtype)
         reinit(self.head.layers[0]); reinit(self.head.layers[2])
-        reinit(self.out_proj)
+        # HYP22: out_proj is tied with token_emb, no separate Linear to reinit
         for b in self.blocks:
             reinit(b.mha.Wq); reinit(b.mha.Wk); reinit(b.mha.Wv); reinit(b.mha.Wo)
             reinit(b.ff.w1);  reinit(b.ff.gate); reinit(b.ff.w2)
@@ -217,7 +221,8 @@ class GPTMini(Module):
         for block in self.blocks:
             x = block(x)
         x = self.head(x)
-        logits = self.out_proj(x)
+        # HYP22: tied output projection — share token_emb.weight (vocab, d_model).T
+        logits = x @ self.token_emb.weight.transpose(1, 0)
         return logits.reshape(T, self.vocab_size) if single else logits
 
     def generate(self, token_ids, max_new=50, temperature=0.1):
@@ -248,7 +253,9 @@ class GPTMini(Module):
             },
             "token_emb": self.token_emb.weight.data.tolist(),
             "pos_emb": self.pos_emb.data.tolist(),
-            "out_proj": self.out_proj.W.data.tolist(),
+            # HYP22: out_proj tied with token_emb — emit null when tied
+            "out_proj": (self.out_proj.W.data.tolist()
+                         if self.out_proj is not None else None),
             "head_w1": self.head.layers[0].W.data.tolist(),
             "head_w2": self.head.layers[2].W.data.tolist(),
             "blocks": [],
@@ -286,7 +293,9 @@ class GPTMini(Module):
         m = cls(**cfg)
         m.token_emb.weight.data = np.array(state["token_emb"])
         m.pos_emb.data = np.array(state["pos_emb"])
-        m.out_proj.W.data = np.array(state["out_proj"])
+        # HYP22: out_proj null = tied with token_emb (no separate weight)
+        if state.get("out_proj") is not None and m.out_proj is not None:
+            m.out_proj.W.data = np.array(state["out_proj"])
         m.head.layers[0].W.data = np.array(state["head_w1"])
         m.head.layers[2].W.data = np.array(state["head_w2"])
         for b, st in zip(m.blocks, state["blocks"]):
