@@ -314,7 +314,7 @@ def compute_bpb(loss, tokenizer, texts):
     return loss / math.log(2) / avg
 
 
-TIME_BUDGET = 60 * 60  # phase 5 HYP8: 60 min — HYP7 disproved orphan theory; realistic system load (zellij worker + VSCode) makes 45 min cut at ep 21 instead of ep 30. Bump to reach ep 30 reliably at the new baseline.
+TIME_BUDGET = 90 * 60  # phase 7 HYP20: 60→90 min — HYP19 hit ep 90 at 60min boundary with bpb still descending. Push 30 more min to let existing HYP18 anchors deepen without corpus expansion.
 
 
 # Phase 0 persona probes — questions taken from synthesize_qa.py's

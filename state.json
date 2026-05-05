@@ -1,8 +1,8 @@
 {
   "phase": 7,
   "phase_name": "Soul layer — train Nami's inner narrative (SOUL.md) into weights",
-  "best_bpb": 0.0591,
-  "best_bpb_commit": "a9da22a",
+  "best_bpb": 0.0802,
+  "best_bpb_commit": "PENDING",
   "best_bpb_note": "phase-0 v3, 16KB corpus. Apples-to-oranges with phase 5's 76KB corpus.",
   "best_bpb_phase5": 0.1602,
   "best_bpb_phase5_commit": "c7ecda2",
@@ -21,26 +21,26 @@
   "current_log": null,
   "last_result": {
     "phase": 7,
-    "hypothesis": "HYP19 (Phase 7 step 4): align 3 still-missing SOUL probes to eval exact prefix (Bob/Whisper/害怕掉記憶) + 5 不同/不用 字符 disambiguation variants",
-    "bpb": 0.0871,
+    "hypothesis": "HYP20 (Phase 7 step 5): TIME_BUDGET 60→90min, HYP18 corpus unchanged. 假設: more epoch on existing anchors will deepen them without corpus dilution.",
+    "bpb": 0.0802,
     "persona": "5/5",
-    "kept": false,
-    "verdict": "REVERT — eval 43/51 = 84.3% (vs HYP18 47/51 = 92.2%, -4 hits / -7.9pp)",
-    "reason": "Adding 8 new SOUL anchors at fixed budget diluted epoch coverage on existing entries. bpb improved to 0.0871 (vs HYP18 0.0928) because new corpus is closer to training distribution, but eval dropped: extended 10→8, topic 15→14, soul 17→15 (target 3 still all miss: Bob still answers 電商美編, Whisper still LINE設計, 害怕掉記憶 partial w/ memory in garbled output). Lesson: prefix space vs no-space matters less than epoch budget — corpus expansion at fixed time budget always trades.",
-    "log": "/tmp/nami-lm-phase7-hyp19-1777870920.log",
+    "kept": true,
+    "verdict": "KEEP — NEW BEST 48/51 = 94.1% (+1 vs HYP18 47/51), bpb 0.0802 (-13.6% vs HYP18 0.0928)",
+    "reason": "90min budget pushed ep 90 → ep 135. Topic recall 16/16 (recovered BlockDAG) and extended 10/10 fully maintained. Soul slight -1 (17→16 strong, +1 partial) — within 5% noise tolerance. Multi-axis KEEP criteria met: bpb improved AND eval improved AND persona unchanged.",
+    "log": "/tmp/nami-lm-phase7-hyp20-1777953634.log",
     "eval_summary": {
       "persona_strong": 5,
-      "extended_strong": 8,
+      "extended_strong": 10,
       "extended_total": 10,
-      "topic_strong": 14,
+      "topic_strong": 16,
       "topic_total": 16,
-      "soul_strong": 15,
+      "soul_strong": 16,
       "soul_partial": 1,
       "soul_total": 20,
-      "any_hit_total": 43,
+      "any_hit_total": 48,
       "all_total": 51
     },
-    "epochs_reached": 90,
+    "epochs_reached": 135,
     "epoch_time_s": 40
   },
   "last_result_v17_archived": {
@@ -249,6 +249,14 @@
       "phase": 7,
       "kept": false,
       "summary": "Eval-prefix alignment + 不同/不用 disambiguation. eval regressed 47→43 due to corpus dilution at fixed budget."
+    },
+    {
+      "id": "HYP20",
+      "phase": 7,
+      "kept": true,
+      "summary": "90min budget unchanged corpus → ep 135, NEW BEST 48/51 = 94.1%, bpb 0.0802 (-13.6%)."
     }
-  ]
+  ],
+  "best_eval_score": 48,
+  "best_eval_commit": "PENDING"
 }
