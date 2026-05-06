@@ -17,6 +17,51 @@
 
 ## Reflections
 
+### 2026-05-06 12:30 — Phase 8 four-REVERT post-mortem (HYP23-26)
+
+After v0.3.0 ship (51/51 saturation), phase 8 attempted 4 different levers
+to break multi-turn 0/5. ALL FOUR FAILED:
+
+| HYP | Lever | Result |
+|---|---|---|
+| 23 | WSD lr schedule | bpb -69% but eval -1 (overfit, REVERT) |
+| 24 | +25 multi-turn dialogues | eval -8 (anchor dilution, REVERT) |
+| 25 | minimal +5 dialogues | eval -4, persona 5→4 (capacity ceiling, REVERT) |
+| 26 | d_model 96→128 (Ryan A pick) | eval -6, multi_turn 0/5 unchanged (REVERT) |
+
+**Pattern**: every lever EITHER regressed single-turn OR didn't move
+multi-turn. The HYP22 51/51 + tied embedding configuration sits in a
+saturation valley — moving in any direction loses height.
+
+**Hypothesis for the structural blocker**:
+1. **Multi-turn isn't a CAPACITY problem** — d=128 (1.07M params) had
+   plenty of capacity but still 0/5. Adding params doesn't help.
+2. **Multi-turn isn't a CORPUS problem** — even +5 well-targeted
+   dialogues regressed instead of helping.
+3. **It IS likely a TRAINING-OBJECTIVE problem** — the next-token
+   prediction loss on Q？A1 Q2 A2 chains doesn't actually train context
+   carrying. Each turn is fed independently; gradient flow doesn't
+   reward "remember turn 1 when answering turn 3".
+
+**To unblock multi-turn would likely require:**
+- Architecture: explicit dialogue-history token attention (RAG-like)
+- OR: Training: multi-turn aware loss (mask answers, only loss on final turn given full history)
+- OR: Bigger model + longer context window (max_seq_len 128 → 256+)
+- OR: Different task framing entirely (encoder-decoder, not pure causal LM)
+
+None of these fit "small surgical change to existing single-file train.py".
+They're phase 9 work.
+
+**Practical decision**: declare phase 8 partially complete. v0.3.0
+51/51 stays as the user-facing release. Multi-turn coherence becomes
+"phase 9 conversational architecture rebuild" goal.
+
+**Single-line summary of this week**: HYP16-22 (phase 7) was glory;
+HYP23-26 (phase 8) was 4 educational REVERTs that mapped the boundary.
+Both are valuable. The boundary is now well-known.
+
+## Reflections
+
 ### 2026-05-05 22:15 — Phase 7 → 8 transition (HYP16-23 retrospect)
 
 **Phase 7 result: SATURATION**

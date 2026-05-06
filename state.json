@@ -21,27 +21,27 @@
   "current_log": null,
   "last_result": {
     "phase": 8,
-    "hypothesis": "HYP25 (Phase 8 step 3): minimal +5 dialogues mapped 1:1 to eval_multiturn 5 categories.",
-    "bpb": 0.0898,
-    "persona": "4/5",
+    "hypothesis": "HYP26 (Phase 8 step 4): d_model 96→128, d_ff 256→384, heads 6→8 (1077K params, +63%).",
+    "bpb": 0.0982,
+    "persona": "5/5",
     "kept": false,
-    "verdict": "REVERT — eval 47/51 (-4 vs HYP22 51 floor), multi-turn 0/5 unchanged, persona regressed 5→4.",
-    "reason": "Even minimal corpus delta (+5 dialogues, +0.4% chunks) regressed: persona 5→4 (lost \"Ryan是誰\" probe), single-turn 51→47 (-4 hits), multi-turn unchanged 0/5. Together with HYP24 (-25 dialogues = -8) this confirms phase 8 saturation paradox: HYP22 51/51 is fragile equilibrium, ANY corpus addition disturbs anchors. The model is at capacity ceiling for single-turn corpus. Multi-turn coherence likely needs BIGGER model (d_model 96 → 128+) OR explicit dialogue separator token, not more corpus at same architecture. This is a STRUCTURAL blocker — written to journal.md open questions for HYP26+.",
-    "log": "/tmp/nami-lm-phase8-hyp25-1778033760.log",
+    "verdict": "REVERT — eval 45/51 (-6 vs HYP22 51), multi_turn 0/5 unchanged.",
+    "reason": "d=128 had plenty of capacity (1077K) but: (1) multi_turn STILL 0/5 — not a capacity problem; (2) single-turn lost 6 hits — bigger model + same epoch budget = under-trained per Chinchilla. After 4 consecutive phase 8 REVERTs (HYP23-26 across 4 different lever families), the structural blocker is clear: multi-turn coherence is a training-OBJECTIVE problem, not capacity/corpus/schedule. Next-token loss on Q？A Q A chains doesnt train context carrying. Phase 8 declared partially complete; multi-turn deferred to phase 9 architecture rebuild. v0.3.0 51/51 single-turn stays as canonical release.",
+    "log": "/tmp/nami-lm-phase8-hyp26-1778040438.log",
     "eval_summary": {
-      "persona_strong": 4,
-      "extended_strong": 10,
+      "persona_strong": 5,
+      "extended_strong": 9,
       "extended_total": 10,
-      "topic_strong": 15,
+      "topic_strong": 13,
       "topic_total": 16,
       "soul_strong": 16,
       "soul_partial": 2,
       "soul_total": 20,
-      "any_hit_total": 47,
+      "any_hit_total": 45,
       "all_total": 51
     },
-    "multi_turn": "0/5 (unchanged — primary metric still pinned)",
-    "epochs_reached": 140
+    "multi_turn": "0/5 (unchanged after 4 REVERTs)",
+    "epochs_reached": 100
   },
   "last_result_v17_archived": {
     "phase": 7,
@@ -297,6 +297,12 @@
       "phase": 8,
       "kept": false,
       "summary": "Minimal +5 dialogues — even 0.4% corpus delta crashes anchors (persona 5→4, single 51→47). Capacity ceiling confirmed. STRUCTURAL pivot needed."
+    },
+    {
+      "id": "HYP26",
+      "phase": 8,
+      "kept": false,
+      "summary": "d_model 96→128 — eval -6, multi_turn unchanged. Capacity not the blocker. 4th phase 8 REVERT confirms structural training-objective issue. Defer multi-turn to phase 9."
     }
   ],
   "best_eval_score": 51,
