@@ -277,29 +277,37 @@ def main():
         from dialogues import DIALOGUES
     except ImportError:
         DIALOGUES = []
-    dialogue_kept = 0
-    dialogue_skipped = 0
+    # HYP28-30 (Phase 9): progressive-context dialogue chunks tagged with
+    # weight=5.0 for HYP30 weighted-loss training. Single-turn chunks
+    # default weight=1.0. The weight is emitted to JSONL for train.py
+    # to pick up at corpus-load time.
+    dialogue_skipped_first = 0
+    dialogue_turn_chunks = 0
+    weighted = []  # list[float] aligned with pairs
+    weighted.extend([1.0] * len(pairs))  # all single-turn chunks so far
     for d in DIALOGUES:
         if not d:
             continue
-        first_user = next((text for role, text in d if role == "U"), None)
-        if first_user is None:
-            continue
-        if first_user in seen_q:
-            dialogue_skipped += 1
-            continue
-        rest_turns = []
-        seen_first = False
+        history = ""
+        first_emitted = False
         for role, text in d:
-            if role == "U" and not seen_first:
-                seen_first = True
-                continue
-            rest_turns.append(text)
-        chained = " ".join(rest_turns)
-        seen_q.add(first_user)
-        pairs.append((first_user, chained))
-        dialogue_kept += 1
-    print(f"  DIALOGUES: +{dialogue_kept} ({dialogue_skipped} skipped on collision)")
+            if role == "U":
+                history += (f"{text}？" if history == "" else f" {text} ")
+            else:  # role == "N"
+                q_so_far = history.rstrip()
+                if not first_emitted:
+                    first_emitted = True
+                    if q_so_far in seen_q:
+                        dialogue_skipped_first += 1
+                        history += text
+                        continue
+                    seen_q.add(q_so_far)
+                pairs.append((q_so_far, text))
+                weighted.append(5.0)  # HYP30: multi-turn chunks weighted 5x
+                history += text
+                dialogue_turn_chunks += 1
+    print(f"  DIALOGUES → {dialogue_turn_chunks} per-turn chunks "
+          f"({dialogue_skipped_first} first-turn skipped on collision, weight=5.0)")
 
     total_bytes = sum(len(q.encode("utf-8")) + len(a.encode("utf-8"))
                       for q, a in pairs)
@@ -307,8 +315,11 @@ def main():
           f"{total_bytes:,} bytes ({total_bytes / 1024:.1f} KB)")
 
     with open(OUT, "w", encoding="utf-8") as f:
-        for q, a in pairs:
-            f.write(json.dumps({"q": q, "a": a}, ensure_ascii=False) + "\n")
+        for (q, a), w in zip(pairs, weighted):
+            row = {"q": q, "a": a}
+            if w != 1.0:
+                row["w"] = w  # HYP30: optional per-chunk loss weight
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
     print(f"📝 wrote {OUT}")
 
 

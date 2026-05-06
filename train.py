@@ -58,19 +58,16 @@ USE_BPE = False
 # =============================================================================
 # Corpus + tokenizer
 # =============================================================================
-def load_corpus() -> list[str]:
-    """Load Q&A pairs from phase0_qa.jsonl, format each as 'q？a'.
+def load_corpus() -> tuple[list[str], list[float]]:
+    """Load Q&A pairs from phase0_qa.jsonl. Returns (texts, weights).
 
-    Why this format: autochat's TRAINING_DATA used the same pattern
-    ('question？answer' as a single autoregressive sequence) and that
-    learned 92/92 acc. We're copying the proven format. The persona
-    probe at end of train() prefixes the question and asks the model
-    to complete the answer.
+    Each line in the JSONL may have an optional "w" field for per-chunk
+    loss weight (HYP30). Default weight 1.0 if absent.
     """
     if not QA_CORPUS.exists():
         raise FileNotFoundError(
             f"{QA_CORPUS} missing — run `python3 synthesize_qa.py` first")
-    out = []
+    out, weights = [], []
     with open(QA_CORPUS, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -78,11 +75,10 @@ def load_corpus() -> list[str]:
                 continue
             d = json.loads(line)
             q, a = d["q"].strip(), d["a"].strip()
-            # Strip a trailing "?/？" from q if present so the join puts one
-            # consistent delimiter between Q and A
             q = q.rstrip("?？")
             out.append(f"{q}？{a}")
-    return out
+            weights.append(float(d.get("w", 1.0)))
+    return out, weights
 
 
 class WordTokenizer:
@@ -358,9 +354,11 @@ def train(epochs: int = 200, lr: float = 0.002,
     print("🌊 nami-lm phase 0 trainer (numpy-grad backend)")
     print("=" * 60)
 
-    corpus = load_corpus()
+    corpus, corpus_weights = load_corpus()
+    n_weighted = sum(1 for w in corpus_weights if w != 1.0)
     print(f"📝 Corpus: {len(corpus)} chunks, "
-          f"{sum(len(c.encode('utf-8')) for c in corpus):,} bytes")
+          f"{sum(len(c.encode('utf-8')) for c in corpus):,} bytes "
+          f"({n_weighted} weighted, HYP30)")
 
     if USE_BPE:
         tokenizer = BPETokenizer()
@@ -369,9 +367,12 @@ def train(epochs: int = 200, lr: float = 0.002,
         tokenizer = WordTokenizer(corpus)
         print(f"📊 Vocab: {tokenizer.vocab_size} tokens (WordTokenizer — phase 0)")
 
-    # Token-length stats so we know whether max_seq_len is sane
-    encoded = [tokenizer.encode(c) for c in corpus]
-    encoded = [ids for ids in encoded if len(ids) >= 2]
+    # Token-length stats so we know whether max_seq_len is sane.
+    # Pair each encoded sequence with its corpus_weight (HYP30).
+    encoded_w = [(tokenizer.encode(c), w)
+                 for c, w in zip(corpus, corpus_weights)]
+    encoded_w = [(ids, w) for ids, w in encoded_w if len(ids) >= 2]
+    encoded = [ids for ids, _ in encoded_w]  # back-compat for stats below
     max_len = max(len(ids) for ids in encoded)
     median_len = sorted(len(ids) for ids in encoded)[len(encoded) // 2]
     print(f"📏 Seq len: median={median_len}, max={max_len}")
@@ -399,14 +400,15 @@ def train(epochs: int = 200, lr: float = 0.002,
 
     opt = AdamW(model.parameters(), lr=lr, weight_decay=0.02)
 
-    # Truncate sequences over max_seq_len (rare for phase 0 short chunks)
-    encoded = [ids[:max_seq_len] for ids in encoded if len(ids) >= 2]
+    # Truncate sequences over max_seq_len, keep weights aligned (HYP30)
+    encoded_w = [(ids[:max_seq_len], w)
+                 for ids, w in encoded_w if len(ids) >= 2]
 
-    # Length-bucket batches (autochat HYP5)
+    # Length-bucket batches (autochat HYP5). Each bucket holds (ids, w).
     BATCH_SIZE = 8
-    length_buckets: dict[int, list[list[int]]] = {}
-    for ids in encoded:
-        length_buckets.setdefault(len(ids), []).append(ids)
+    length_buckets: dict[int, list[tuple[list[int], float]]] = {}
+    for ids, w in encoded_w:
+        length_buckets.setdefault(len(ids), []).append((ids, w))
     bucket_keys = sorted(length_buckets.keys())
     n_batches_per_epoch = sum(
         (len(length_buckets[L]) + BATCH_SIZE - 1) // BATCH_SIZE
@@ -440,19 +442,23 @@ def train(epochs: int = 200, lr: float = 0.002,
         epoch_buckets = bucket_keys[:]
         np.random.shuffle(epoch_buckets)
         for L in epoch_buckets:
-            seqs = length_buckets[L][:]
+            seqs = length_buckets[L][:]  # list of (ids, w)
             np.random.shuffle(seqs)
             for i in range(0, len(seqs), BATCH_SIZE):
                 batch = seqs[i:i + BATCH_SIZE]
-                inputs = np.array([s[:-1] for s in batch], dtype=np.int64)
-                targets = np.array([s[1:] for s in batch], dtype=np.int64)
+                inputs = np.array([s[0][:-1] for s in batch], dtype=np.int64)
+                targets = np.array([s[0][1:] for s in batch], dtype=np.int64)
+                # HYP30: per-batch weight = mean of per-sequence weights
+                batch_w = float(np.mean([s[1] for s in batch]))
                 opt.zero_grad()
                 logits = model(inputs)
-                loss = cross_entropy(logits, targets)
+                loss = cross_entropy(logits, targets) * batch_w
                 loss.backward()
                 clip_grad_norm_(model.parameters(), max_norm=0.5)
                 opt.step()
-                total_loss += float(loss.data) * len(batch)
+                # Track UNWEIGHTED loss for bpb reporting (so bpb stays
+                # comparable to prior HYPs)
+                total_loss += float(loss.data) / batch_w * len(batch)
                 n_seqs += len(batch)
 
         avg_loss = total_loss / max(n_seqs, 1)
@@ -522,7 +528,7 @@ def _load_for_inference():
         print(f"❌ {weights} missing — run `python3 train.py` first to "
               "produce a checkpoint")
         sys.exit(1)
-    corpus = load_corpus()
+    corpus, _ = load_corpus()
     if USE_BPE:
         tokenizer = BPETokenizer()
     else:
