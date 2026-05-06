@@ -1,6 +1,6 @@
 {
-  "phase": 8,
-  "phase_name": "Conversational + KV cache",
+  "phase": 9,
+  "phase_name": "Conversational rebuild — α-mini data volume",
   "best_bpb": 0.0745,
   "best_bpb_commit": "PENDING",
   "best_bpb_note": "phase-0 v3, 16KB corpus. Apples-to-oranges with phase 5's 76KB corpus.",
@@ -20,28 +20,28 @@
   "current_hypothesis": null,
   "current_log": null,
   "last_result": {
-    "phase": 8,
-    "hypothesis": "HYP27 (Phase 8 step 5): progressive-context dialogue synthesis (Ryan B pick).",
-    "bpb": 0.1002,
+    "phase": 9,
+    "hypothesis": "HYP29 (Phase 9 step 2): HYP28 corpus + 120min budget compensation.",
+    "bpb": 0.0929,
     "persona": "5/5",
     "kept": false,
-    "verdict": "REVERT — eval 47/51 (-4 vs HYP22 51), multi_turn 0/5 unchanged.",
-    "reason": "Even with corrected training format (each turn now sees full prior history as query, predicts current answer), multi_turn 0/5 didnt budge AND single-turn lost 4 hits. 5th consecutive phase 8 REVERT. The 77 multi-turn chunks still drowned by 1323 single-turn chunks. Going to need 200+ multi-turn chunks AND budget compensation to overcome dilution. At 86KB corpus that means doubling SOUL_QA + careful curation. Not a quick win. Phase 8 capacity ceiling confirmed harder than expected.",
-    "log": "/tmp/nami-lm-phase8-hyp27-1778048402.log",
+    "verdict": "REVERT — single-turn 47/51 (-4 still violates -5pp), multi-turn turn-level 37.5% (real signal).",
+    "reason": "HYP29 ran +30min compensation but only recovered +1 single-turn hit (HYP28 46→HYP29 47). Multi-turn turn-level 37.5% maintained. Per phase 9 design doc explicit floor 51/51 single-turn, this still violates. Lesson: budget compensation insufficient for corpus-induced anchor regression at this corpus size. Need different lever: weighted loss (Option β) or special tokens (Option γ). Pivoting to HYP30 = weighted loss to push multi-turn signal while protecting single-turn anchors via gradient reweighting.",
+    "log": "/tmp/nami-lm-phase9-hyp29-1778068093.log",
     "eval_summary": {
       "persona_strong": 5,
       "extended_strong": 10,
       "extended_total": 10,
       "topic_strong": 15,
       "topic_total": 16,
-      "soul_strong": 17,
-      "soul_partial": 0,
+      "soul_strong": 16,
+      "soul_partial": 1,
       "soul_total": 20,
       "any_hit_total": 47,
       "all_total": 51
     },
-    "multi_turn": "0/5 (unchanged after 5 phase-8 REVERTs)",
-    "epochs_reached": 130
+    "multi_turn": "0/5 dialogues, 6/16 turns (37.5%) — turn-level signal positive vs HYP22 baseline",
+    "epochs_reached": 170
   },
   "last_result_v17_archived": {
     "phase": 7,
@@ -309,6 +309,18 @@
       "phase": 8,
       "kept": false,
       "summary": "Progressive-context training format. eval -4, multi_turn unchanged. 5th phase 8 REVERT confirms multi-turn needs much more than format change."
+    },
+    {
+      "id": "HYP28",
+      "phase": 9,
+      "kept": false,
+      "summary": "α-mini 30 dialogues + progressive context. eval -5 (46/51 strict REVERT) BUT multi-turn turn-level 37.5% real signal. Budget compensation in HYP29."
+    },
+    {
+      "id": "HYP29",
+      "phase": 9,
+      "kept": false,
+      "summary": "Same corpus + 120min budget. eval 47/51 (-4 still violates floor), multi-turn turn-level 37.5% maintained. Budget alone cant compensate corpus dilution. Pivot to weighted loss."
     }
   ],
   "best_eval_score": 51,

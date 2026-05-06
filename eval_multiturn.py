@@ -88,31 +88,33 @@ def chat_response(model, tok, history_text, max_new=30, temperature=0.1):
 
 
 def score_dialogue(model, tok, turns, debug=False):
-    """Run a multi-turn dialogue, return (passed: bool, per_turn_results)."""
-    history = ""
+    """Run a multi-turn dialogue, return (passed: bool, per_turn_results).
+
+    Training format (synthesize_qa.py:298): first turn is "Q？A" then
+    subsequent turns are space-joined: "Q1？A1 Q2 A2 Q3 A3...". So we
+    build history matching that format exactly: "？" only after the
+    FIRST user turn, then space-separated for the rest.
+    """
     results = []
     all_pass = True
+    history = ""
     for i, (q, expected) in enumerate(turns):
-        # Build history with prior turns + current question
-        history += f"{q}？"
+        if i == 0:
+            history = f"{q}？"
+        else:
+            history += f" {q} "  # subsequent turns: space-separated, no ？
         response = chat_response(model, tok, history)
-        # Strong hit: expected appears in first len(expected)+4 chars
         window = response[: len(expected) + 4]
         hit = expected in window
         all_pass = all_pass and hit
         results.append({
-            "turn": i + 1,
-            "q": q,
-            "expected": expected,
-            "response": response[:60],
-            "hit": hit,
+            "turn": i + 1, "q": q, "expected": expected,
+            "response": response[:60], "hit": hit,
         })
         if debug:
             mark = "✅" if hit else "❌"
             print(f"    [{i+1}] {mark} '{q}' → '{response[:50]}' (expect '{expected}')")
-        # Append model's response to history for next turn (whether hit or
-        # miss — we want to see if model recovers from its own mistakes)
-        history += response[: 25] + "\n"  # cap to avoid runaway
+        history += response[: 25]
     return all_pass, results
 
 
@@ -131,20 +133,29 @@ def main():
 
     passed = 0
     total = len(DIALOGUES)
+    turns_hit = 0
+    turns_total = 0
     for d_idx, turns in enumerate(DIALOGUES):
         if not quiet:
             print(f"\n💬 Dialogue {d_idx + 1} ({len(turns)} turns):")
-        ok, _ = score_dialogue(model, tok, turns, debug=not quiet)
+        ok, results = score_dialogue(model, tok, turns, debug=not quiet)
         if ok:
             passed += 1
+        turns_hit += sum(1 for r in results if r["hit"])
+        turns_total += len(results)
 
     pct = passed / total * 100
+    turn_pct = turns_hit / turns_total * 100
     print(f"\n{'=' * 60}")
-    print(f"📊 Multi-turn coherence: {passed}/{total} dialogues pass ({pct:.1f}%)")
+    print(f"📊 Multi-turn coherence: {passed}/{total} dialogues ({pct:.1f}%) | "
+          f"{turns_hit}/{turns_total} turns ({turn_pct:.1f}%)")
     print(f"{'=' * 60}")
-    print(f'eval_multiturn={{"passed": {passed}, "total": {total}, "pct": {pct:.1f}}}')
+    print(f'eval_multiturn={{"dialogue_passed": {passed}, "dialogue_total": {total}, '
+          f'"dialogue_pct": {pct:.1f}, "turn_hit": {turns_hit}, '
+          f'"turn_total": {turns_total}, "turn_pct": {turn_pct:.1f}}}')
 
-    # Phase 8 gate: target 15+ /20 (currently 5 dialogues — placeholder)
+    # Phase 9 gate: dialogue 15+/20 OR turn 60%+ for v1.0; for now any
+    # non-zero dialogue pass is a signal.
     sys.exit(0 if passed >= total * 0.6 else 1)
 
 
