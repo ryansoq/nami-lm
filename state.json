@@ -21,26 +21,27 @@
   "current_log": null,
   "last_result": {
     "phase": 8,
-    "hypothesis": "HYP23 (Phase 8 step 1): WSD lr schedule (CS336 Lec 11) — wall-clock time fraction driven, 7%/83%/10% phases.",
-    "bpb": 0.0268,
+    "hypothesis": "HYP24 (Phase 8 step 2): +25 multi-turn dialogues to dialogues.py covering 5 chain families.",
+    "bpb": 0.0928,
     "persona": "5/5",
     "kept": false,
-    "verdict": "REVERT — eval 50/51 (-1 vs HYP22 51/51), violates phase 8 regression guard.",
-    "reason": "bpb dropped dramatically (-69% vs HYP22 0.0869 → 0.0268) but eval went 51 → 50 (lost soul partial probe). The bpb crash is an OVERFIT signal — WSD with linear-decay-to-zero polished the training corpus too tightly, generalization on held-out probes regressed. Lesson: at small corpus, cosine gradual decay beats WSD aggressive decay-to-zero. Keep 51/51 floor, revert to cosine.",
-    "log": "/tmp/nami-lm-phase8-hyp23r-1777982461.log",
+    "verdict": "REVERT — eval 43/51 (-8 vs HYP22 51 floor), multi-turn 0/5 unchanged.",
+    "reason": "Adding 25 dialogues at fixed 90min budget caused soul layer collapse: 19/20 → 13/20 strong (-6 hits). Single-turn eval -8 hits violates phase 8 regression guard (-5pp = -2.55 hits cap). Multi-turn unchanged 0/5 — corpus expansion alone insufficient, model still cant chain context. Same lesson as HYP19: corpus growth at fixed budget = anchor dilution. Reverted dialogues.py + downloaded v0.3.0 weights from release. Note: fresh tokenizer vocab grew (3592→3736) due to topic notes added since HYP22 — full HYP22 reproduction now requires also rolling back memory/topics/ which is not desirable. Move to HYP25 with budget increase + smaller dialogue set.",
+    "log": "/tmp/nami-lm-phase8-hyp24r-1778026721.log",
     "eval_summary": {
       "persona_strong": 5,
       "extended_strong": 10,
       "extended_total": 10,
-      "topic_strong": 16,
+      "topic_strong": 15,
       "topic_total": 16,
-      "soul_strong": 19,
+      "soul_strong": 13,
       "soul_partial": 0,
       "soul_total": 20,
-      "any_hit_total": 50,
+      "any_hit_total": 43,
       "all_total": 51
     },
-    "epochs_reached": 140
+    "multi_turn": "0/5 (unchanged from baseline)",
+    "epochs_reached": 138
   },
   "last_result_v17_archived": {
     "phase": 7,
@@ -284,6 +285,12 @@
       "phase": 8,
       "kept": false,
       "summary": "WSD lr schedule — bpb 0.0268 -69% but eval 50/51 -1 (overfit signal). REVERT to cosine."
+    },
+    {
+      "id": "HYP24",
+      "phase": 8,
+      "kept": false,
+      "summary": "+25 multi-turn dialogues — soul -6 strong (19→13), multi-turn unchanged 0/5. Corpus dilution at fixed budget. REVERT."
     }
   ],
   "best_eval_score": 51,
