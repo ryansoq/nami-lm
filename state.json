@@ -21,27 +21,27 @@
   "current_log": null,
   "last_result": {
     "phase": 8,
-    "hypothesis": "HYP26 (Phase 8 step 4): d_model 96→128, d_ff 256→384, heads 6→8 (1077K params, +63%).",
-    "bpb": 0.0982,
+    "hypothesis": "HYP27 (Phase 8 step 5): progressive-context dialogue synthesis (Ryan B pick).",
+    "bpb": 0.1002,
     "persona": "5/5",
     "kept": false,
-    "verdict": "REVERT — eval 45/51 (-6 vs HYP22 51), multi_turn 0/5 unchanged.",
-    "reason": "d=128 had plenty of capacity (1077K) but: (1) multi_turn STILL 0/5 — not a capacity problem; (2) single-turn lost 6 hits — bigger model + same epoch budget = under-trained per Chinchilla. After 4 consecutive phase 8 REVERTs (HYP23-26 across 4 different lever families), the structural blocker is clear: multi-turn coherence is a training-OBJECTIVE problem, not capacity/corpus/schedule. Next-token loss on Q？A Q A chains doesnt train context carrying. Phase 8 declared partially complete; multi-turn deferred to phase 9 architecture rebuild. v0.3.0 51/51 single-turn stays as canonical release.",
-    "log": "/tmp/nami-lm-phase8-hyp26-1778040438.log",
+    "verdict": "REVERT — eval 47/51 (-4 vs HYP22 51), multi_turn 0/5 unchanged.",
+    "reason": "Even with corrected training format (each turn now sees full prior history as query, predicts current answer), multi_turn 0/5 didnt budge AND single-turn lost 4 hits. 5th consecutive phase 8 REVERT. The 77 multi-turn chunks still drowned by 1323 single-turn chunks. Going to need 200+ multi-turn chunks AND budget compensation to overcome dilution. At 86KB corpus that means doubling SOUL_QA + careful curation. Not a quick win. Phase 8 capacity ceiling confirmed harder than expected.",
+    "log": "/tmp/nami-lm-phase8-hyp27-1778048402.log",
     "eval_summary": {
       "persona_strong": 5,
-      "extended_strong": 9,
+      "extended_strong": 10,
       "extended_total": 10,
-      "topic_strong": 13,
+      "topic_strong": 15,
       "topic_total": 16,
-      "soul_strong": 16,
-      "soul_partial": 2,
+      "soul_strong": 17,
+      "soul_partial": 0,
       "soul_total": 20,
-      "any_hit_total": 45,
+      "any_hit_total": 47,
       "all_total": 51
     },
-    "multi_turn": "0/5 (unchanged after 4 REVERTs)",
-    "epochs_reached": 100
+    "multi_turn": "0/5 (unchanged after 5 phase-8 REVERTs)",
+    "epochs_reached": 130
   },
   "last_result_v17_archived": {
     "phase": 7,
@@ -303,6 +303,12 @@
       "phase": 8,
       "kept": false,
       "summary": "d_model 96→128 — eval -6, multi_turn unchanged. Capacity not the blocker. 4th phase 8 REVERT confirms structural training-objective issue. Defer multi-turn to phase 9."
+    },
+    {
+      "id": "HYP27",
+      "phase": 8,
+      "kept": false,
+      "summary": "Progressive-context training format. eval -4, multi_turn unchanged. 5th phase 8 REVERT confirms multi-turn needs much more than format change."
     }
   ],
   "best_eval_score": 51,
