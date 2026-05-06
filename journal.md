@@ -1,13 +1,19 @@
 # nami-lm — Journal
 
 ## Open questions
-- **Multi-turn eval at 0/5 baseline** — does the model need a NEW token
-  in vocab for "\n" (turn separator) for the dialogue format to anchor?
-  Or is plain concat enough once trained on the format? Defer until
-  HYP24 corpus is built.
+- **Multi-turn 0/5 stays after corpus expansion** — HYP24 (+25 dialogues),
+  HYP25 (+5 minimal targeted) BOTH failed to lift multi-turn off 0. Single-turn
+  eval REGRESSED in both (HYP24: 51→43, HYP25: 51→47). At 1M params + tied
+  embedding the model may be at *capacity ceiling* for the saturated single-turn
+  task. Multi-turn coherence may need bigger model OR explicit dialogue
+  separator token. **Open for HYP26+ design.**
 - **bpb-eval divergence** (HYP23 lesson) — why did bpb -69% but eval -1?
   Probably overfit to training distribution at near-zero lr. Means
   bpb is unreliable below ~0.05; we should rely on eval.
+- **Phase 8 saturation paradox** — phase 7 saturation + tied embedding made
+  the model MORE fragile to corpus changes, not less. Adding training data
+  now disturbs the carefully-tuned anchor balance. May need to fork phase 9
+  with bigger d_model BEFORE more corpus growth.
 
 ## Reflections
 

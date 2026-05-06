@@ -21,27 +21,27 @@
   "current_log": null,
   "last_result": {
     "phase": 8,
-    "hypothesis": "HYP24 (Phase 8 step 2): +25 multi-turn dialogues to dialogues.py covering 5 chain families.",
-    "bpb": 0.0928,
-    "persona": "5/5",
+    "hypothesis": "HYP25 (Phase 8 step 3): minimal +5 dialogues mapped 1:1 to eval_multiturn 5 categories.",
+    "bpb": 0.0898,
+    "persona": "4/5",
     "kept": false,
-    "verdict": "REVERT — eval 43/51 (-8 vs HYP22 51 floor), multi-turn 0/5 unchanged.",
-    "reason": "Adding 25 dialogues at fixed 90min budget caused soul layer collapse: 19/20 → 13/20 strong (-6 hits). Single-turn eval -8 hits violates phase 8 regression guard (-5pp = -2.55 hits cap). Multi-turn unchanged 0/5 — corpus expansion alone insufficient, model still cant chain context. Same lesson as HYP19: corpus growth at fixed budget = anchor dilution. Reverted dialogues.py + downloaded v0.3.0 weights from release. Note: fresh tokenizer vocab grew (3592→3736) due to topic notes added since HYP22 — full HYP22 reproduction now requires also rolling back memory/topics/ which is not desirable. Move to HYP25 with budget increase + smaller dialogue set.",
-    "log": "/tmp/nami-lm-phase8-hyp24r-1778026721.log",
+    "verdict": "REVERT — eval 47/51 (-4 vs HYP22 51 floor), multi-turn 0/5 unchanged, persona regressed 5→4.",
+    "reason": "Even minimal corpus delta (+5 dialogues, +0.4% chunks) regressed: persona 5→4 (lost \"Ryan是誰\" probe), single-turn 51→47 (-4 hits), multi-turn unchanged 0/5. Together with HYP24 (-25 dialogues = -8) this confirms phase 8 saturation paradox: HYP22 51/51 is fragile equilibrium, ANY corpus addition disturbs anchors. The model is at capacity ceiling for single-turn corpus. Multi-turn coherence likely needs BIGGER model (d_model 96 → 128+) OR explicit dialogue separator token, not more corpus at same architecture. This is a STRUCTURAL blocker — written to journal.md open questions for HYP26+.",
+    "log": "/tmp/nami-lm-phase8-hyp25-1778033760.log",
     "eval_summary": {
-      "persona_strong": 5,
+      "persona_strong": 4,
       "extended_strong": 10,
       "extended_total": 10,
       "topic_strong": 15,
       "topic_total": 16,
-      "soul_strong": 13,
-      "soul_partial": 0,
+      "soul_strong": 16,
+      "soul_partial": 2,
       "soul_total": 20,
-      "any_hit_total": 43,
+      "any_hit_total": 47,
       "all_total": 51
     },
-    "multi_turn": "0/5 (unchanged from baseline)",
-    "epochs_reached": 138
+    "multi_turn": "0/5 (unchanged — primary metric still pinned)",
+    "epochs_reached": 140
   },
   "last_result_v17_archived": {
     "phase": 7,
@@ -291,6 +291,12 @@
       "phase": 8,
       "kept": false,
       "summary": "+25 multi-turn dialogues — soul -6 strong (19→13), multi-turn unchanged 0/5. Corpus dilution at fixed budget. REVERT."
+    },
+    {
+      "id": "HYP25",
+      "phase": 8,
+      "kept": false,
+      "summary": "Minimal +5 dialogues — even 0.4% corpus delta crashes anchors (persona 5→4, single 51→47). Capacity ceiling confirmed. STRUCTURAL pivot needed."
     }
   ],
   "best_eval_score": 51,
