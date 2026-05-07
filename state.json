@@ -21,27 +21,27 @@
   "current_log": null,
   "last_result": {
     "phase": 9,
-    "hypothesis": "HYP30 (Phase 9 step 3, Option β): weighted loss 5x on multi-turn chunks.",
-    "bpb": 0.1047,
+    "hypothesis": "HYP31 (Phase 9 step 4, Option A sliding window): max_seq_len 64→128 + layers 0+2 sliding W=32 / layer 1 full attention.",
+    "bpb": 0.1349,
     "persona": "5/5",
-    "kept": true,
-    "verdict": "KEEP — first phase-9 success! single-turn 49/51 (-2 within -5pp), multi-turn turn-level 37.5% preserved.",
-    "reason": "Weighted loss 5x successfully balanced single-turn anchor protection (49/51 vs HYP22 51) AND multi-turn pattern teaching (turn-level 37.5% vs HYP22 ~31%). bpb +20% but multi-axis judgment: weighted training emphasizes hard examples (multi-turn) so bpb on uniform corpus rises proportionally — eval is the real metric. soul 19→18 strong but 16→16 topic recovered fully. v0.4.0 release candidate — first phase 9 progress, multi-turn ceiling officially cracked at turn level even if dialogue pass remains 0/5.",
-    "log": "/tmp/nami-lm-phase9-hyp30-1778077138.log",
+    "kept": false,
+    "verdict": "REVERT — eval 44/51 (-7 vs HYP22 51, way over -5pp), multi-turn turn 31.2% (worse than HYP30 37.5%).",
+    "reason": "Sliding window cosplay didnt work at 1M scale: -7 single-turn AND -6pp multi-turn turn-level. Likely root cause: (1) W=32 cuts off start of progressive-context dialogues (50-100 tokens), making model unable to anchor first-turn context; (2) 3 layers too few to alternate sliding+full effectively (Llama 4 uses 8+ layers in pattern); (3) confounded with max_seq_len 64→128 change (violated surgical diff principle). Lesson: cosplay strategy works for production-scale architecture (HYP21 bias=False, HYP22 tied) but not for sliding window when corpus + layers too small. Frontier 2026 default doesnt down-port to 1M.",
+    "log": "/tmp/nami-lm-phase9-hyp31s-1778130744.log",
     "eval_summary": {
       "persona_strong": 5,
-      "extended_strong": 10,
+      "extended_strong": 9,
       "extended_total": 10,
-      "topic_strong": 16,
+      "topic_strong": 14,
       "topic_total": 16,
-      "soul_strong": 18,
+      "soul_strong": 16,
       "soul_partial": 0,
       "soul_total": 20,
-      "any_hit_total": 49,
+      "any_hit_total": 44,
       "all_total": 51
     },
-    "multi_turn": "0/5 dialogues, 6/16 turns (37.5%) — signal preserved with weighted loss",
-    "epochs_reached": 130
+    "multi_turn": "0/5 dialogues, 5/16 turns (31.2%) — REGRESSED from HYP30 37.5%",
+    "epochs_reached": 110
   },
   "last_result_v17_archived": {
     "phase": 7,
@@ -327,6 +327,12 @@
       "phase": 9,
       "kept": true,
       "summary": "Weighted loss 5x on 166 multi-turn chunks. eval 49/51 (-2 within -5pp), turn-level 37.5% preserved. First phase-9 KEEP, Option β confirmed."
+    },
+    {
+      "id": "HYP31",
+      "phase": 9,
+      "kept": false,
+      "summary": "Sliding window attention + max_seq_len 128. eval -7 + multi-turn -6pp. Cosplay frontier doesnt down-port to 1M scale; 3 layers too few for alternation pattern. REVERT."
     }
   ],
   "best_eval_score": 51,
