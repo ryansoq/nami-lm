@@ -62,6 +62,56 @@ Both are valuable. The boundary is now well-known.
 
 ## Reflections
 
+### 2026-05-07 17:00 — Phase 9 CLOSED, no v0.4.0 ship (HYP30 KEEP was noise)
+
+Critical reproducibility check: re-ran HYP30 to restore v0.4.0 candidate
+weights for shipping. **Result did NOT match the original HYP30 KEEP**:
+
+| Metric | HYP30 (original) | HYP30 (retrain) | Delta |
+|---|---|---|---|
+| single-turn eval | 49/51 | 46/51 | -3 |
+| multi-turn turn-level | 37.5% | **18.8%** | **-19pp** |
+| bpb final | 0.1047 | 0.1059 | +1.1% |
+
+The bpb is similar (RNG noise on training) but multi-turn turn-level
+collapsed from 37.5% → 18.8%. Same code, same corpus, same numpy seed
+(42), but different epoch counts due to system load variance (HYP30
+hit ep 130 in 90min, retrain hit ep 120). **A handful of epochs
+difference produces 19pp eval swing on the small 16-turn metric.**
+
+**Conclusion:** HYP30 "first phase 9 KEEP" was **NOISE on a 16-sample
+metric**, not a real signal. Multi-turn turn-level varies wildly
+(18-40%) on the same model+config across runs. Single-point evaluation
+is unreliable at our scale.
+
+**v0.4.0 ship CANCELED.** No release-grade improvement over v0.3.0.
+Phase 9's 5 HYPs are all educational REVERTs / noise:
+- HYP28-29: corpus + budget — both -4 to -5 single-turn
+- HYP30: weighted loss — looked like KEEP but unreproducible
+- HYP31a: weight 10x — REVERT
+- HYP31b: sliding window — REVERT cosplay didn't down-port
+- HYP30-retrain: noise confirmation
+
+**Reverted to phase 8 final state:**
+- dialogues.py + synthesize_qa.py back to HYP22 baseline (1340 chunks)
+- model_weights.json restored to v0.3.0 (51/51 single-turn canonical)
+
+**Real lesson — eval methodology bug:**
+- 5 dialogues × 3-4 turns = 16 turns total = too small for stable %
+- Need 50+ dialogues with 200+ turns before turn-level pct stabilizes
+- Or focus on dialogue-pass count (which has been steady 0/5 across all phase 9 HYPs)
+
+**Phase 9 verdict: COMPLETE FAILURE ON MULTI-TURN AXIS.**
+Single-turn 51/51 v0.3.0 stays canonical. v0.4.0 deferred indefinitely.
+
+**Open path to phase 10 (when resumed):**
+1. Build **bigger eval set** first (50+ dialogues / 200+ turns) before
+   training new HYPs
+2. Or accept that 1M / 3-layer can't do multi-turn at all and skip
+   conversational, focus on data quality for single-turn improvement
+3. Or fork "phase 9b — explicit dialogue tokens" with proper noise
+   characterization
+
 ### 2026-05-07 15:30 — Phase 9 wrap-up (HYP28-31 retrospect, multi-turn ceiling found)
 
 After phase 8 5-REVERT (HYP23-27 mapped boundary that single-turn anchors

@@ -1,7 +1,7 @@
 {
   "phase": 9,
-  "phase_name": "Conversational rebuild — α-mini data volume",
-  "best_bpb": 0.0745,
+  "phase_name": "CLOSED — multi-turn ceiling at 1M / 3-layer",
+  "best_bpb": 0.0869,
   "best_bpb_commit": "PENDING",
   "best_bpb_note": "phase-0 v3, 16KB corpus. Apples-to-oranges with phase 5's 76KB corpus.",
   "best_bpb_phase5": 0.1602,
@@ -21,27 +21,27 @@
   "current_log": null,
   "last_result": {
     "phase": 9,
-    "hypothesis": "HYP31 (Phase 9 step 4, Option A sliding window): max_seq_len 64→128 + layers 0+2 sliding W=32 / layer 1 full attention.",
-    "bpb": 0.1349,
+    "hypothesis": "HYP30-retrain: reproduce HYP30 weighted loss 5x KEEP for v0.4.0 ship.",
+    "bpb": 0.1059,
     "persona": "5/5",
     "kept": false,
-    "verdict": "REVERT — eval 44/51 (-7 vs HYP22 51, way over -5pp), multi-turn turn 31.2% (worse than HYP30 37.5%).",
-    "reason": "Sliding window cosplay didnt work at 1M scale: -7 single-turn AND -6pp multi-turn turn-level. Likely root cause: (1) W=32 cuts off start of progressive-context dialogues (50-100 tokens), making model unable to anchor first-turn context; (2) 3 layers too few to alternate sliding+full effectively (Llama 4 uses 8+ layers in pattern); (3) confounded with max_seq_len 64→128 change (violated surgical diff principle). Lesson: cosplay strategy works for production-scale architecture (HYP21 bias=False, HYP22 tied) but not for sliding window when corpus + layers too small. Frontier 2026 default doesnt down-port to 1M.",
-    "log": "/tmp/nami-lm-phase9-hyp31s-1778130744.log",
+    "verdict": "REPRODUCTION FAILED — multi-turn turn-level 37.5% → 18.8% same config. HYP30 first KEEP was NOISE.",
+    "reason": "Same code/corpus/seed but timing variance gave 10 fewer epochs (130→120) which produced 19pp swing in 16-sample turn-level metric. Single-point eval unreliable at this scale. v0.4.0 ship CANCELED. Phase 9 fully reverted to v0.3.0 canonical (51/51 single-turn). 5 phase 9 HYPs are educational failures.",
+    "log": "/tmp/nami-lm-phase9-hyp30retrain-1778136783.log",
     "eval_summary": {
       "persona_strong": 5,
-      "extended_strong": 9,
+      "extended_strong": 10,
       "extended_total": 10,
       "topic_strong": 14,
       "topic_total": 16,
-      "soul_strong": 16,
+      "soul_strong": 17,
       "soul_partial": 0,
       "soul_total": 20,
-      "any_hit_total": 44,
+      "any_hit_total": 46,
       "all_total": 51
     },
-    "multi_turn": "0/5 dialogues, 5/16 turns (31.2%) — REGRESSED from HYP30 37.5%",
-    "epochs_reached": 110
+    "multi_turn": "0/5 dialogues, 3/16 turns (18.8%) — confirms HYP30 37.5% was noise",
+    "epochs_reached": 120
   },
   "last_result_v17_archived": {
     "phase": 7,
@@ -333,8 +333,15 @@
       "phase": 9,
       "kept": false,
       "summary": "Sliding window attention + max_seq_len 128. eval -7 + multi-turn -6pp. Cosplay frontier doesnt down-port to 1M scale; 3 layers too few for alternation pattern. REVERT."
+    },
+    {
+      "id": "HYP30-retrain",
+      "phase": 9,
+      "kept": false,
+      "summary": "Reproduction of HYP30 KEEP — different result (18.8% vs 37.5% turn-level). Multi-turn metric noise too high; HYP30 KEEP retracted. v0.4.0 CANCELED."
     }
   ],
   "best_eval_score": 51,
-  "best_eval_commit": "PENDING"
+  "best_eval_commit": "PENDING",
+  "phase_9_verdict": "CLOSED — full failure on multi-turn axis. v0.3.0 (51/51) remains canonical. Multi-turn 0/5 ceiling is structural at 1M/3-layer scale OR eval methodology needs bigger sample (50+ dialogues / 200+ turns)."
 }
