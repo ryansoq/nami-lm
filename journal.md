@@ -62,6 +62,56 @@ Both are valuable. The boundary is now well-known.
 
 ## Reflections
 
+### 2026-05-07 15:30 — Phase 9 wrap-up (HYP28-31 retrospect, multi-turn ceiling found)
+
+After phase 8 5-REVERT (HYP23-27 mapped boundary that single-turn anchors
+are fragile), phase 9 was specifically chartered for multi-turn coherence
+breakthrough per Ryan msg 3211 ("Gogo"). 4 days, 5 HYPs:
+
+| HYP | Lever | single-turn | multi-turn turn | KEEP/REVERT |
+|---|---|---|---|---|
+| 28 | +30 dialogues progressive ctx, 90min | 46/51 (-5) | 37.5% | REVERT (eval -5pp) |
+| 29 | HYP28 + 120min | 47/51 (-4) | 37.5% | REVERT (eval -4) |
+| 30 | HYP28 + weighted loss 5x | **49/51 (-2)** | **37.5%** | **KEEP** ⭐ |
+| 31a | HYP30 + weight 10x | 49/51 | 25% | REVERT (regressed) |
+| 31b | sliding window + max_seq_len 128 | 44/51 (-7) | 31.2% | REVERT (cosplay didn't down-port) |
+
+**Phase 9 winner: HYP30 weighted loss 5x** — first phase 9 KEEP, the
+only lever that lifted multi-turn turn-level (~31% baseline → 37.5%)
+while preserving single-turn within tolerance.
+
+**Lessons:**
+1. **Cosplay frontier defaults works for ARCHITECTURE basics**
+   (HYP21 bias=False, HYP22 tied embedding) but **NOT for sliding
+   window** when scale too small. 1M / 3-layer < threshold for
+   alternation pattern.
+2. **Weight reweighting beats data volume + budget compensation**
+   at small scale. HYP24 +25 dialogues + HYP29 +30min budget both
+   failed; HYP30 weight 5x balanced the gradient ratio cleanly.
+3. **Multi-turn dialogue 0/5 ceiling at 1M**. HYP30 turn-level 37.5%
+   = 6/16 turns hit, but ALL 5 dialogues require all-turns to pass.
+   At 1M params + 3 layers, even with weighted loss + progressive
+   context, the model can't carry context across 3-4 turn dialogues
+   reliably. This is **architectural**: needs more layers OR
+   context tokens (`<|U|>`/`<|N|>`/`<|EOT|>`) OR proper KV cache
+   integration with longer-range attention.
+
+**v0.4.0 ship (today):**
+- HYP30 weights (single 49/51 + multi turn 37.5%)
+- 30 multi-turn dialogues + progressive-context training
+- Notes phase 9's 5 HYPs as educational boundary mapping
+
+**Phase 10 plan (deferred, not started):**
+- Scale up: d_model 96 → ?, num_layers 3 → ?
+- Special dialogue tokens
+- KV cache for inference (independent improvement)
+- Move corpus 86 KB → 200 KB (CS336 Lec 13)
+
+**Open questions remaining:**
+- Multi-turn dialogue 0/5 — fundamentally architectural at this scale?
+- bpb-eval divergence above 0.10 — should we trust eval at all when
+  bpb regresses 20%?
+
 ### 2026-05-05 22:15 — Phase 7 → 8 transition (HYP16-23 retrospect)
 
 **Phase 7 result: SATURATION**
