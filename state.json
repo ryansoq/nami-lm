@@ -20,28 +20,15 @@
   "current_hypothesis": null,
   "current_log": null,
   "last_result": {
-    "phase": 9,
-    "hypothesis": "HYP30-retrain: reproduce HYP30 weighted loss 5x KEEP for v0.4.0 ship.",
-    "bpb": 0.1059,
+    "phase": 10,
+    "hypothesis": "v0.3.1-baseline retrain — same HYP22 config on current corpus (vocab 3592→3780 from new topic notes).",
+    "bpb": 0.1085,
     "persona": "5/5",
-    "kept": false,
-    "verdict": "REPRODUCTION FAILED — multi-turn turn-level 37.5% → 18.8% same config. HYP30 first KEEP was NOISE.",
-    "reason": "Same code/corpus/seed but timing variance gave 10 fewer epochs (130→120) which produced 19pp swing in 16-sample turn-level metric. Single-point eval unreliable at this scale. v0.4.0 ship CANCELED. Phase 9 fully reverted to v0.3.0 canonical (51/51 single-turn). 5 phase 9 HYPs are educational failures.",
-    "log": "/tmp/nami-lm-phase9-hyp30retrain-1778136783.log",
-    "eval_summary": {
-      "persona_strong": 5,
-      "extended_strong": 10,
-      "extended_total": 10,
-      "topic_strong": 14,
-      "topic_total": 16,
-      "soul_strong": 17,
-      "soul_partial": 0,
-      "soul_total": 20,
-      "any_hit_total": 46,
-      "all_total": 51
-    },
-    "multi_turn": "0/5 dialogues, 3/16 turns (18.8%) — confirms HYP30 37.5% was noise",
-    "epochs_reached": 120
+    "kept": true,
+    "verdict": "BASELINE — eval not yet run (bash blocked). bpb 0.1085 (slightly higher than HYP22 0.0869, expected with bigger corpus). Awaiting eval_multiturn_v2 baseline measurement.",
+    "log": "/tmp/nami-lm-baseline-1778227211.log",
+    "epochs_reached": 130,
+    "note": "v0.3.1 candidate weights ready, eval pending. Phase 10 multi-turn campaign starts after eval baseline established."
   },
   "last_result_v17_archived": {
     "phase": 7,
