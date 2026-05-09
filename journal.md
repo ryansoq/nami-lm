@@ -223,5 +223,24 @@ forced more efficient representation, generalization went up. CS336
 Lec 9's "embedding params don't scale like core params" was the lock,
 HYP22 was the key.
 
+---
+
+## 2026-05-09 09:38 — idle tick (phase 10 blocked on eval baseline)
+
+Heartbeat tick fired but no new HYP started. Reasons:
+- state.json: phase 10, current_pid=null, last_result is v0.3.1-baseline KEEP
+  but eval_multiturn_v2 has NOT been run (bash blocked twice 5/8).
+- Phase 10 contract says: "multi-turn campaign starts after eval baseline
+  established." Starting another HYP without baseline = HYP30-style
+  retract risk (KEEP signal turns out to be noise).
+- feedback_inbox.md empty.
+- Ryan in main chat queued tasks A→B→C; eval baseline is task C, blocked
+  on task B (cron stagger fix) confirmation.
+
+Decision: idle, no new run. Eval will happen when Ryan picks B's fix
+variant — that unblocks the sequence into C.
+
+Silent (no TG, per program.md §5.4 quiet mode).
+
 
 

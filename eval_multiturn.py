@@ -122,7 +122,7 @@ def main():
     quiet = "--quiet" in sys.argv
 
     # Load
-    texts = load_corpus()
+    texts, _ = load_corpus()
     tok = BPETokenizer() if USE_BPE else WordTokenizer(texts)
     model = GPTMini.load(str(WEIGHTS))
 

@@ -164,7 +164,7 @@ def main():
         print("🌊 nami-lm eval harness (Phase 6 + Phase 7)")
         print("=" * 60)
 
-    corpus = load_corpus()
+    corpus, _ = load_corpus()
     tok = BPETokenizer() if USE_BPE else WordTokenizer(corpus)
     model = GPTMini.load(str(WEIGHTS))
     if model.vocab_size != tok.vocab_size:
