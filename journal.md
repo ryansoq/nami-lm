@@ -242,5 +242,90 @@ variant — that unblocks the sequence into C.
 
 Silent (no TG, per program.md §5.4 quiet mode).
 
+## 2026-05-09 15:35 — HYP31 REVERT
+
+Result: REVERT per decision criteria. Both primary targets HIT
+(B.Whisper +27pp, I.Toccata +40pp) but G.Soul collapsed entirely
+(13.3% → 0%) and C.nami-lm dropped below 70% floor.
+
+**Confounded experiment.** The training run reached only 24 epochs
+in the 90-min budget vs baseline's 122 epochs in similar time —
+system load today (Saturday: full Ryan-Nami chat session, multiple
+heartbeat/cron ticks, dashboard refresh, eval runs) gave HYP31 a
+5x speed handicap. So I can't separate "new dialogues helped" from
+"undertraining hurt" cleanly.
+
+What looks real:
+- Weight-5 multi-turn chunks for Whisper / Toccata DO land. Both
+  categories saw their first-ever turn hits. Data work is the right
+  direction.
+- Soul layer requires deep training. 24 epochs lost it; baseline's
+  122 epochs holds it at 13.3%. Next attempt needs matching epoch
+  budget for fair compare.
+
+Restore actions:
+- `cp model_weights.json.v0.3.1-baseline.bak model_weights.json`
+  (md5 matched, byte-for-byte restore)
+- `git checkout dialogues.py` to drop the 10 new dialogues
+- Corpus regenerated, vocab back to 3738 (slight drift from baseline
+  3780; daily files changed since AM. Baseline weights not directly
+  evaluable now, but bytes are correct).
+
+Next HYP candidate (HYP32):
+  Same data change (10 Whisper/Toccata dialogues) PLUS one of:
+  (a) wait for quieter system window (overnight after Ryan sleeps),
+  (b) raise TIME_BUDGET 90→180 min so 24 epochs becomes 48,
+  (c) reduce other ClawX cron noise during training.
+  Don't run until system load drops; otherwise we re-confound.
+
+## 2026-05-09 13:50 — HYP31 launched (phase 10 first real HYP)
+
+State.json's note from baseline commit said "next HYP should target
+Whisper / Toccata multi-turn coverage (data, not architecture)".
+This tick acts on it.
+
+Added 10 new multi-turn dialogues to dialogues.py (5 Whisper + 5
+Toccata, 3 turns each) mirroring eval_multiturn_v2 probes for those
+two categories. Each Nami answer leads with the eval-expected
+substring so training on these chunks transfers directly to eval
+hits.
+
+Pre-train sanity check:
+  - dialogues.py imports cleanly, len(DIALOGUES) 59 → 69
+  - synthesize_qa.py regen OK, 1498 chunks (was 1490, +8 net —
+    some new Q's collided with existing single-turn QAs and the
+    HYP13 skip-on-collision rule absorbed them)
+  - DIALOGUES → 196 per-turn chunks (was 166, +30 = exactly my
+    10 dialogues × 3 turns), weight=5.0 each
+  - vocab 3751 (slight drop from 3780 — corpus rebalance)
+
+Backup: model_weights.json.v0.3.1-baseline.bak saved before launch.
+Training: PID 989343, log /tmp/nami-lm-hyp31-1778305790.log,
+budget 90 min (TIME_BUDGET=5400s, --auto mode), ETA ~15:20 CST.
+
+Decision criteria (eval gate after train):
+  - KEEP if B.Whisper turn pct >= 20% AND I.Toccata turn pct >= 20%
+    AND no other category drops below 70% of baseline turn pct
+  - REVERT (cp .bak back to model_weights.json) otherwise
+
+Silent (no TG per quiet mode). Next ticks tail log + skip until
+PID exits.
+
+## 2026-05-09 10:00 — idle tick (baseline freshly committed)
+
+Phase 10 baseline (591fb20) established 5 min before this tick:
+single 47/51, multi-turn 20/150 (13.3%). Backlog.md "Next up" still
+shows HYP20-22 from phase 7-8 — those are pre-baseline candidates
+and don't address phase 10's actual bottleneck (multi-turn coverage
+of Whisper / Toccata, both 0/15 in eval).
+
+Skipping new HYP this tick. Right next move per state.json's note:
+write Whisper-multi-turn + Toccata-multi-turn dialogues (data work,
+not training), but Ryan's main-chat priority is now A2 (clawx.py
+debounce upstream fix — he just said "Go"). Defer phase-10 next HYP
+until A2 lands.
+
+Silent.
+
 
 

@@ -19,6 +19,45 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp31": {
+    "phase": 10,
+    "hypothesis": "HYP31 — add 5 Whisper + 5 Toccata multi-turn dialogues to dialogues.py to address B.Whisper 0/15 and I.Toccata 0/15 in eval_multiturn_v2 baseline.",
+    "kept": false,
+    "verdict": "REVERT — primary targets hit (B.Whisper +27pp, I.Toccata +40pp) but G.Soul collapsed 13.3% → 0% and C.nami-lm dropped 13.3% → 6.7%, both below the 70% baseline floor. Single-turn also regressed 47/51 → 41/51 (-6 hits). Confounded with undertraining: 24 epochs vs baseline 122 (system load 5x higher today).",
+    "training_log": "/tmp/nami-lm-hyp31-1778305790.log",
+    "epochs_reached": 24,
+    "elapsed_s": 5484.1,
+    "final_bpb": 0.302247,
+    "eval_summary": {
+      "single_turn": "41/51 (80.4%) — Persona 5/5, Extended 7/10, Topic 12/16, Soul 17/20",
+      "multi_turn_v2": {
+        "dialogue_passed": 0,
+        "turn_hit": 28,
+        "turn_total": 150,
+        "turn_pct": 18.7,
+        "delta_vs_baseline": "+5.4pp overall, but uneven",
+        "per_category": {
+          "A.Kaspa": "13.3% (= baseline)",
+          "B.Whisper": "26.7% (+26.7pp ✅)",
+          "C.nami-lm": "6.7% (-6.7pp, BELOW 70% floor)",
+          "D.Identity": "13.3% (+6.7pp)",
+          "E.Relationship": "33.3% (-6.7pp, ABOVE 70% floor 28%)",
+          "F.Workflow": "13.3% (= baseline)",
+          "G.Soul": "0.0% (-13.3pp, COLLAPSED, far below 70% floor) ❌",
+          "H.Aqua": "26.7% (= baseline)",
+          "I.Toccata": "40.0% (+40pp ✅)",
+          "J.Routine": "13.3% (+6.7pp)"
+        }
+      }
+    },
+    "lessons": [
+      "Confounded experiment: added DATA + reduced TRAINING (system load). Can't tell if data alone helped or undertraining caused the topic decay.",
+      "Next HYP must control for training time — either run baseline at matching epoch count, or give HYP a longer time budget under quiet system load.",
+      "G.Soul collapse from 13.3% → 0% is the clearest signal: 24 epochs is genuinely insufficient for soul-layer retention regardless of data changes.",
+      "Whisper + Toccata weight-5 chunks DID land — those 2 categories saw real lift. Keep the dialogues for next attempt; only revert weights."
+    ],
+    "revert_action": "model_weights.json restored from .v0.3.1-baseline.bak (md5 verified). dialogues.py reverted via git checkout to drop the 10 new Whisper/Toccata dialogues. Corpus regen put vocab at 3738 (drifted slightly from baseline's 3780 due to daily files changing since AM); baseline weights cannot be re-evaluated against current corpus without training but the byte-for-byte restore is verified."
+  },
   "last_result": {
     "phase": 10,
     "hypothesis": "v0.3.1-baseline retrain — same HYP22 config on current corpus (vocab 3592→3780 from new topic notes).",
