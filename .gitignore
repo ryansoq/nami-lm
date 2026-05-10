@@ -6,6 +6,8 @@ __pycache__/
 .DS_Store
 experiments.jsonl
 model_weights.json
+model_weights.json.*.bak
+tokenizer_vocab.json
 data/*.jsonl
 data/cache/
 *.log
