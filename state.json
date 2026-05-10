@@ -19,6 +19,43 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp32": {
+    "phase": 10,
+    "hypothesis": "HYP32 — same 10 Whisper/Toccata multi-turn dialogues as HYP31 + TIME_BUDGET 90→180min. Test whether HYP31's regression was undertraining (24ep) vs the dialogues themselves.",
+    "kept": false,
+    "verdict": "REVERT — 51 epochs reached (2.1× HYP31's 24, still less than baseline 122). Whisper/Toccata targets hit at the threshold (both 20%) but THREE other categories now below 70% floor: E.Relationship 26.7% (floor 28%), G.Soul 6.7% (floor 9.3%), H.Aqua 13.3% (floor 18.7%). Single-turn 43/51 vs baseline 47/51. The dialogues themselves cause embedding-space competition, not just undertraining — confirmed by HYP31→HYP32 paired comparison.",
+    "training_log": "/tmp/nami-lm-hyp32-1778312730.log",
+    "epochs_reached": 51,
+    "elapsed_s": 10820.4,
+    "final_bpb": 0.174088,
+    "eval_summary": {
+      "single_turn": "43/51 (84.3%) — Persona 4/5, Extended 7/10, Topic 14/16, Soul 16/20",
+      "multi_turn_v2": {
+        "dialogue_passed": 0,
+        "turn_hit": 21,
+        "turn_total": 150,
+        "turn_pct": 14.0,
+        "delta_vs_baseline": "+0.7pp overall — basically equal, but uneven",
+        "per_category": {
+          "A.Kaspa": "20.0% (+6.7pp)",
+          "B.Whisper": "20.0% (+20.0pp ✅ at threshold)",
+          "C.nami-lm": "0.0% (-13.3pp, COLLAPSED)",
+          "D.Identity": "6.7% (= baseline)",
+          "E.Relationship": "26.7% (-13.3pp, BELOW 70% floor 28%) ❌",
+          "F.Workflow": "6.7% (-6.7pp)",
+          "G.Soul": "6.7% (-6.7pp, BELOW 70% floor 9.3%) ❌",
+          "H.Aqua": "13.3% (-13.3pp, BELOW 70% floor 18.7%) ❌",
+          "I.Toccata": "20.0% (+20.0pp ✅ at threshold)",
+          "J.Routine": "20.0% (+13.3pp)"
+        }
+      }
+    },
+    "lessons": [
+      "HYP31 vs HYP32 paired comparison decouples the data effect from undertraining: with 2.1× more epochs HYP32 still regressed E/G/H below floor, and single-turn still regressed 43/51 vs 47/51. The dialogues themselves compete with existing soul/relationship/aqua probes in embedding space.",
+      "Direction-correct (Whisper/Toccata gain confirmed twice) but execution wrong (weight-5 chunks crowd out other categories).",
+      "Next attempts (HYP33+) should: (a) lower dialogue weight 5.0→2.0~3.0, (b) shorten Q/A wording so vocab pressure is smaller, (c) write the new dialogues to REINFORCE not REPLACE existing soul/aqua context (e.g. embed Whisper Q within an existing soul-layer dialogue's turn 4-5), (d) consider growing model capacity (d_model 96→128) to absorb more context without competition."
+    ]
+  },
   "last_result_hyp31": {
     "phase": 10,
     "hypothesis": "HYP31 — add 5 Whisper + 5 Toccata multi-turn dialogues to dialogues.py to address B.Whisper 0/15 and I.Toccata 0/15 in eval_multiturn_v2 baseline.",

@@ -242,6 +242,68 @@ variant — that unblocks the sequence into C.
 
 Silent (no TG, per program.md §5.4 quiet mode).
 
+## 2026-05-10 14:10 — HYP32 REAP (delayed) → REVERT
+
+HYP32 actually finished 2026-05-09 18:45 (51 epochs, bpb 0.174,
+persona 4/5). The ~19-hour gap before reap came from the bash-blocked
+period after Ryan's first rejection mid-afternoon yesterday — I
+stayed memory-only through ~30 ticks until he returned this morning
+asking about the Vibe Coding Taiwan article.
+
+Result: REVERT. The HYP31→HYP32 paired comparison decouples the data
+hypothesis from undertraining cleanly:
+
+  | Category    | baseline | HYP31 (24ep) | HYP32 (51ep) | floor |
+  |-------------|----------|--------------|--------------|-------|
+  | B.Whisper   | 0%       | 26.7% ✅      | 20.0% ✅      | 0     |
+  | I.Toccata   | 0%       | 40.0% ✅      | 20.0% ✅      | 0     |
+  | E.Relation  | 40%      | 33.3%        | 26.7% ❌      | 28%   |
+  | G.Soul      | 13.3%    | 0%   ❌       | 6.7% ❌       | 9.3%  |
+  | H.Aqua      | 26.7%    | 26.7%        | 13.3% ❌      | 18.7% |
+  | C.nami-lm   | 13.3%    | 6.7% ❌       | 0%   ❌       | 9.3%  |
+  | Single-turn | 47/51    | 41/51        | 43/51        | --    |
+
+Even with 2.1× the training, the new dialogues degrade E/G/H/C below
+the floor while only buying back a fraction. **Direction confirmed,
+execution wrong.** The 10 dialogues at weight 5.0 compete in
+embedding space with soul/aqua/relationship — they don't add, they
+replace.
+
+Next HYP candidates (HYP33+):
+  - **HYP33 (lower weight)**: same dialogues at weight 2.0 instead
+    of 5.0, see if the gain holds while floor is preserved.
+  - **HYP34 (embed-not-add)**: rewrite the new content INTO existing
+    soul-layer dialogues' turn 4-5, instead of standalone dialogues.
+    Whisper / Toccata become *expansions* of existing soul context,
+    not new competing topics.
+  - **HYP35 (model capacity)**: d_model 96→128 to absorb more
+    content without crowd-out. More expensive (params ~+33%).
+
+Restore actions (same as HYP31 REVERT):
+  - cp model_weights.json.v0.3.1-baseline.bak model_weights.json
+    (md5 verified, byte-equal)
+  - git checkout dialogues.py train.py (TIME_BUDGET back to 90min,
+    drops the 10 new dialogues)
+  - corpus regenerated, vocab back to baseline-era state
+
+State.json + journal committed; revert pushed.
+
+## 2026-05-09 15:45 — HYP32 launched (Ryan said 繼續～)
+
+Single-lever change vs HYP31: TIME_BUDGET 90→180 min. Same 10
+Whisper/Toccata dialogues re-added. Tests the hypothesis that
+HYP31's G.Soul collapse was undertraining (24 ep), not data.
+
+If HYP32 reaches ~48 ep and G.Soul recovers ≥9.3% (70% floor of
+baseline 13.3%) while Whisper/Toccata gains hold, KEEP.
+If G.Soul still <9.3% at 48 ep, the dialogues themselves cause
+embedding-space competition with Soul probes — REVERT and try
+different dialogue wording / weight tuning.
+
+Backup model_weights.json.v0.3.1-baseline.bak still good.
+Training PID 993582, log /tmp/nami-lm-hyp32-1778312730.log,
+ETA reap ~18:45.
+
 ## 2026-05-09 15:35 — HYP31 REVERT
 
 Result: REVERT per decision criteria. Both primary targets HIT
