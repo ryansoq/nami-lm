@@ -85,17 +85,31 @@ class WordTokenizer:
     """Phase 0 tokenizer — same hybrid rule as autochat: ASCII alpha
     runs and digit runs become single tokens, everything else
     (Chinese, punctuation, whitespace) is char-level. Phase 1 replaces
-    this with BPE."""
+    this with BPE.
 
-    def __init__(self, texts):
-        all_tokens = set()
-        for t in texts:
-            all_tokens.update(self._tokenize(t))
-        self.vocab = sorted(all_tokens)
+    Constructor accepts either `texts=[...]` (build vocab from corpus)
+    or `vocab=[...]` (use pre-built vocab — for inference against a
+    saved checkpoint, see train.py:save vocab_path)."""
+
+    def __init__(self, texts=None, vocab=None):
+        if vocab is not None:
+            self.vocab = list(vocab)
+        else:
+            all_tokens = set()
+            for t in texts or []:
+                all_tokens.update(self._tokenize(t))
+            self.vocab = sorted(all_tokens)
         self.token2id = {t: i for i, t in enumerate(self.vocab)}
         self.id2token = {i: t for i, t in enumerate(self.vocab)}
         self.vocab_size = len(self.vocab)
         self.name = "WordTokenizer"
+
+    @classmethod
+    def load(cls, path):
+        """Load a frozen vocab from JSON saved by train.py."""
+        with open(path, "r", encoding="utf-8") as f:
+            d = json.load(f)
+        return cls(vocab=d["vocab"])
 
     def _tokenize(self, text):
         tokens, i = [], 0
@@ -497,6 +511,22 @@ def train(epochs: int = 200, lr: float = 0.002,
     # Save weights so probe / chat modes can reuse them
     weights_path = HERE / "model_weights.json"
     model.save(str(weights_path))
+
+    # Pin the tokenizer vocab next to weights so inference doesn't have to
+    # rebuild from corpus (which drifts as topics/daily files change). The
+    # 2026-05-10 voice-spike bug — model trained on vocab 3780, current
+    # corpus produces 3738, token IDs misaligned, generate yields noise —
+    # is caused by reconstructing the tokenizer at inference time. With a
+    # frozen vocab.json next to model_weights.json, nami_voice.py and any
+    # other inference path can decode against the exact ID space the model
+    # was trained on.
+    if isinstance(tokenizer, WordTokenizer):
+        vocab_path = HERE / "tokenizer_vocab.json"
+        with open(vocab_path, "w", encoding="utf-8") as f:
+            json.dump({"name": "WordTokenizer",
+                       "vocab": tokenizer.vocab,
+                       "vocab_size": tokenizer.vocab_size}, f, ensure_ascii=False)
+        print(f"💾 Tokenizer vocab saved to {vocab_path} ({tokenizer.vocab_size} tokens)")
 
     # Log to experiments.jsonl
     result = {
