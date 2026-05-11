@@ -19,6 +19,35 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp35": {
+    "phase": 10,
+    "hypothesis": "HYP35 — d_model 96→128 (+41% params 673K→947K) + HYP34 design. Capacity bottleneck hypothesis: bigger model should absorb +30 weighted chunks without crowd-out.",
+    "kept": false,
+    "verdict": "REVERT — bigger model SEVERELY UNDERTRAINED. 90min budget gave only 10 epochs (vs HYP34's 22). bpb 0.890 (vs HYP34's 0.325) is 2.7x worse — model never converged. Single-turn 31/51 = 60.8% WORST of all HYPs.",
+    "training_log": "/tmp/nami-lm-hyp35-1778533809.log",
+    "epochs_reached": 10,
+    "elapsed_s": 5620.2,
+    "final_bpb": 0.890263,
+    "params": 947072,
+    "eval_summary": {
+      "single_turn": "31/51 (60.8%) — WORST of HYP31-35 (47/41/43/39/42/31)",
+      "multi_turn_v2": {
+        "turn_pct": 14.0,
+        "per_category": {
+          "B.Whisper": "13.3% (+13.3pp — degraded vs HYP34's 27%)",
+          "I.Toccata": "26.7% (+26.7pp ✅ — only stable win)",
+          "G.Soul": "6.7% (below floor)",
+          "H.Aqua": "6.7% (below floor)"
+        }
+      }
+    },
+    "lessons": [
+      "Bigger model needs proportionally MORE training time. d_model 96→128 (+41% params) at SAME 90min budget gave fewer epochs (10 vs 22), and the extra capacity didn't help because optimizer never converged.",
+      "Pure capacity bump is WRONG at this scale — model is too undertrained to USE the extra parameters. Persona 5/5 (vs HYP34 4/5) is the early-loop signal that warmups well, but deep training (topic/soul) collapsed.",
+      "Correct next HYP: keep d_model 96 + TIME_BUDGET 90→180min. Gives smaller model more epochs to push the HYP34 design closer to floor compliance. Capacity bump should wait until budget can pay for it.",
+      "Across HYP31-35, the design winner is unambiguously HYP34: weight 2.0 + persona-Whisper + direct-Toccata + d_model 96. Stick with HYP34 structure, just extend training budget."
+    ]
+  },
   "last_result_hyp34": {
     "phase": 10,
     "hypothesis": "HYP34 path D — weight 5.0→2.0 + persona-anchored Whisper + DIRECT-phrasing Toccata. Test whether lower weight gives other categories room while keeping primary targets.",
