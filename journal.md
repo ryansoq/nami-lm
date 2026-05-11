@@ -242,6 +242,49 @@ variant — that unblocks the sequence into C.
 
 Silent (no TG, per program.md §5.4 quiet mode).
 
+## 2026-05-12 01:24 — HYP33 launched (path B: embed-not-add)
+
+ClawX restarted ~01:21 (Ryan, fixing the permission relay rejection
+loop). Bash unblocked. Resumed the autoresearch line Ryan authorized
+at 10:09 ("依循自己的建議 往前做" + "火力全開"). Picked path B from
+my own HYP32 REVERT analysis: rewrite Whisper/Toccata dialogues so
+each FIRST turn anchors on a Nami persona question.
+
+Concrete change vs HYP31/32:
+
+  HYP31/32 (standalone):
+    [("U", "Whisper是什麼？"), ("N", "Kaspa上的隱私covenant"),
+     ("U", "為什麼免費？"),    ("N", "免費協議層 公共財"),
+     ("U", "Toccata後變什麼？"), ("N", "deployable contract")]
+
+  HYP33 (persona-anchored):
+    [("U", "Nami最愛的project？"), ("N", "Whisper Kaspa上的隱私covenant"),
+     ("U", "為什麼免費？"),         ("N", "免費協議層 公共財"),
+     ("U", "Toccata後變什麼？"),   ("N", "deployable contract 上鏈")]
+
+Same eval-probe answer substrings still appear, so eval_multiturn_v2
+detection is unchanged. But training signal is now bonded to the
+"Nami persona" embedding cluster instead of competing with
+soul/aqua/relationship as a parallel topic.
+
+10 dialogues × 3 turns = same scale as HYP31/32. Weight kept at 5.0
+(not lowered) so we test the CONTENT REDESIGN hypothesis cleanly
+without confounding with weight tuning.
+
+Decision criteria (same as HYP31/32):
+  KEEP if B.Whisper ≥ 20% AND I.Toccata ≥ 20% AND no category drops
+  below 70% of baseline turn pct.
+  REVERT otherwise.
+
+Hardware note: ClawX just restarted, system load should be lower
+than 5/9-5/10. Watching for epoch count closer to baseline's 122.
+
+Backup: model_weights.json.v0.3.1.1-realigned.bak saved before
+launch.
+
+PID 1110729, log /tmp/nami-lm-hyp33-1778520251.log, 90 min budget,
+ETA reap ~02:54.
+
 ## 2026-05-10 14:10 — HYP32 REAP (delayed) → REVERT
 
 HYP32 actually finished 2026-05-09 18:45 (51 epochs, bpb 0.174,

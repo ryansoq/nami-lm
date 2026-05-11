@@ -19,6 +19,45 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp33": {
+    "phase": 10,
+    "hypothesis": "HYP33 — persona-anchored first turn (embed-not-add). Whisper/Toccata dialogues with first turn replaced by Nami persona question to keep new content bonded to soul layer instead of competing.",
+    "kept": false,
+    "verdict": "REVERT — persona anchor DID succeed at its stated goal (G.Soul + H.Aqua + E.Relationship held within or above 70% floor) but at the cost of (a) primary target I.Toccata only +6.7pp (failed ≥20% threshold), (b) other categories A.Kaspa / C.nami-lm / J.Routine dropped below floor, (c) single-turn 39/51 = 76.5% (worst of all three HYPs).",
+    "training_log": "/tmp/nami-lm-hyp33-1778520251.log",
+    "epochs_reached": 21,
+    "elapsed_s": 5460.1,
+    "final_bpb": 0.346018,
+    "eval_summary": {
+      "single_turn": "39/51 (76.5%) — Persona 4/5, Extended 8/10, Topic 12/16, Soul 15/20",
+      "multi_turn_v2": {
+        "dialogue_passed": 1,
+        "turn_hit": 22,
+        "turn_total": 150,
+        "turn_pct": 14.7,
+        "delta_vs_baseline": "+1.4pp overall, very uneven",
+        "per_category": {
+          "A.Kaspa": "6.7% (-6.7pp, BELOW 70% floor 9.3%) ❌",
+          "B.Whisper": "26.7% (+26.7pp ✅ — best Whisper of all HYPs)",
+          "C.nami-lm": "6.7% (-6.7pp, BELOW 70% floor 9.3%) ❌",
+          "D.Identity": "13.3% (+6.7pp)",
+          "E.Relationship": "33.3% (-6.7pp, ABOVE floor 28%) ✓ HELD",
+          "F.Workflow": "13.3% (= baseline)",
+          "G.Soul": "13.3% (= baseline) ✓ HELD — anchor worked",
+          "H.Aqua": "26.7% (= baseline) ✓ HELD — anchor worked",
+          "I.Toccata": "6.7% (+6.7pp, FAILED ≥20% threshold) ❌",
+          "J.Routine": "0% (-6.7pp, BELOW 70% floor 4.7%) ❌"
+        }
+      }
+    },
+    "lessons": [
+      "Persona-anchoring WORKS for protecting soul/aqua/relationship from embedding competition — G/H/E all held within or above floor for the first time across HYP31/32/33. The mechanism is real.",
+      "But persona-anchoring SHIFTS the damage, doesn't remove it. With same weight=5.0 and ~21 epochs, four other categories (A/C/J + I) absorbed the loss G/H/E avoided.",
+      "Toccata anchor ('Nami興奮什麼？') was weaker than expected — only 1/15 turn hits vs HYP31's 6/15 and HYP32's 3/15. The persona phrasing made the model worse at canonical 'Toccata是什麼' eval probes, not better.",
+      "Single-turn 47→39 across three HYPs (47/41/43/39) suggests model capacity is fundamentally insufficient for +30 weighted-5 chunks. Next path should lower weight (5→2) AND/OR grow capacity (d_model 96→128) before retrying content design.",
+      "HYP33 confirms HYP31/32 confirms HYP30 — phase 10 needs eval_multiturn_v2 to grow OR model to grow. 50-dialogue eval × tiny model is structurally noise-limited."
+    ]
+  },
   "last_result_hyp32": {
     "phase": 10,
     "hypothesis": "HYP32 — same 10 Whisper/Toccata multi-turn dialogues as HYP31 + TIME_BUDGET 90→180min. Test whether HYP31's regression was undertraining (24ep) vs the dialogues themselves.",
