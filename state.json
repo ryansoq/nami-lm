@@ -19,6 +19,43 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp34": {
+    "phase": 10,
+    "hypothesis": "HYP34 path D — weight 5.0→2.0 + persona-anchored Whisper + DIRECT-phrasing Toccata. Test whether lower weight gives other categories room while keeping primary targets.",
+    "kept": false,
+    "verdict": "REVERT but BEST BALANCE so far. BOTH primary targets hit (Whisper 26.7%, Toccata 26.7% — Toccata first time clean!). Single-turn 42/51 = 82.4% (best of 4 HYPs). But A.Kaspa / C.nami-lm / G.Soul still below 70% floor.",
+    "training_log": "/tmp/nami-lm-hyp34-1778526960.log",
+    "epochs_reached": 22,
+    "elapsed_s": 5445.4,
+    "final_bpb": 0.325231,
+    "eval_summary": {
+      "single_turn": "42/51 (82.4%) — best of HYP31/32/33/34",
+      "multi_turn_v2": {
+        "turn_hit": 24,
+        "turn_total": 150,
+        "turn_pct": 16.0,
+        "per_category": {
+          "A.Kaspa": "6.7% (-6.7pp, BELOW floor) ❌",
+          "B.Whisper": "26.7% (+26.7pp ✅)",
+          "C.nami-lm": "6.7% (-6.7pp, BELOW floor) ❌",
+          "D.Identity": "6.7% (= baseline)",
+          "E.Relationship": "33.3% (above floor) ✓",
+          "F.Workflow": "13.3% (= baseline)",
+          "G.Soul": "6.7% (-6.7pp, BELOW floor) ❌",
+          "H.Aqua": "20.0% (above floor 18.7%) ✓",
+          "I.Toccata": "26.7% (+26.7pp ✅✅ — first clean hit, direct phrasing worked)",
+          "J.Routine": "13.3% (+6.7pp)"
+        }
+      }
+    },
+    "lessons": [
+      "PRIMARY TARGETS BOTH HIT: Whisper anchor + Toccata direct phrasing = first time ≥20% on both. Design pattern validated.",
+      "Weight 2.0 helped — Whisper holds at 27%, Toccata jumps from HYP33's 7% to 27%, Aqua holds at 20% (vs HYP33's 27%, smaller buffer but still above floor).",
+      "BUT 3 categories (A.Kaspa, C.nami-lm, G.Soul) still drop. Implies model capacity (673K params) is the actual bottleneck, not weight or anchor.",
+      "Cleanest signal so far across HYP31-34. Best single-turn (42), best per-target hit rate. Decision criteria still REVERT because floor breach, but this is the BEST DESIGN.",
+      "Next HYP candidates: (a) d_model 96→128 (+33% params, addresses capacity directly), (b) weight further 2.0→1.0 (cheap), (c) train budget 90→180min for more epochs."
+    ]
+  },
   "last_result_hyp33": {
     "phase": 10,
     "hypothesis": "HYP33 — persona-anchored first turn (embed-not-add). Whisper/Toccata dialogues with first turn replaced by Nami persona question to keep new content bonded to soul layer instead of competing.",
