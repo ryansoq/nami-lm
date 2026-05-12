@@ -35,6 +35,7 @@ from numpy_grad.nn import (
     Linear,
     Module,
     MultiHeadAttention,
+    RMSNorm,
     Sequential,
     SwiGLU,
     clip_grad_norm_,
@@ -167,9 +168,12 @@ class TransformerBlock(Module):
     def __init__(self, d_model, d_ff, num_heads):
         # HYP21: bias=False on LN + MHA (per Stanford CS336 Lec 3 / huangserva).
         # SwiGLU was already bias-free; head + out_proj already bias-free.
-        self.ln1 = LayerNorm(d_model, bias=False)
+        # HYP38: LayerNorm → RMSNorm (Llama 1/2/3 / T5 / GPT-NeoX). Drops
+        # mean-centering + beta; ~25% faster per norm. CS336 Lec 3 flags
+        # as "free speed + matched quality" lever at small scale.
+        self.ln1 = RMSNorm(d_model)
         self.mha = MultiHeadAttention(d_model, num_heads, bias=False)
-        self.ln2 = LayerNorm(d_model, bias=False)
+        self.ln2 = RMSNorm(d_model)
         self.ff = SwiGLU(d_model, d_ff)
 
     def forward(self, x):
@@ -272,13 +276,15 @@ class GPTMini(Module):
         }
         for b in self.blocks:
             # HYP21: handle bias=False (None values for beta/Wq_b/etc)
+            # HYP38: RMSNorm has no .beta attribute (LayerNorm does) — use
+            # getattr so save/load works against both norm types.
             def _opt(t):
                 return t.data.tolist() if t is not None else None
             state["blocks"].append({
                 "ln1_g": b.ln1.gamma.data.tolist(),
-                "ln1_b": _opt(b.ln1.beta),
+                "ln1_b": _opt(getattr(b.ln1, "beta", None)),
                 "ln2_g": b.ln2.gamma.data.tolist(),
-                "ln2_b": _opt(b.ln2.beta),
+                "ln2_b": _opt(getattr(b.ln2, "beta", None)),
                 "Wq": b.mha.Wq.W.data.tolist(),
                 "Wk": b.mha.Wk.W.data.tolist(),
                 "Wv": b.mha.Wv.W.data.tolist(),
@@ -316,9 +322,9 @@ class GPTMini(Module):
                     return
                 target.data = np.array(v)
             b.ln1.gamma.data = np.array(st["ln1_g"])
-            _maybe_set(b.ln1.beta, "ln1_b")
+            _maybe_set(getattr(b.ln1, "beta", None), "ln1_b")
             b.ln2.gamma.data = np.array(st["ln2_g"])
-            _maybe_set(b.ln2.beta, "ln2_b")
+            _maybe_set(getattr(b.ln2, "beta", None), "ln2_b")
             b.mha.Wq.W.data = np.array(st["Wq"])
             b.mha.Wk.W.data = np.array(st["Wk"])
             b.mha.Wv.W.data = np.array(st["Wv"])

@@ -19,6 +19,20 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp38": {
+    "phase": 10,
+    "hypothesis": "HYP38 — RMSNorm replaces LayerNorm (Llama 1/2/3 canonical). First architecture lever.",
+    "kept": false,
+    "verdict": "REVERT BY CRASH — training completed 29 epochs successfully (persona 5/5 pass), but save() crashed with AttributeError 'RMSNorm has no attribute beta'. The save fix (getattr) was added DURING the run via edit-to-train.py, but the running process had already imported the buggy save(). Result: no weights persisted, no eval, no experiments.jsonl entry. Treat as REVERT — model state unchanged (still v0.3.1.1-realigned baseline).",
+    "training_log": "/tmp/nami-lm-hyp38-1778590992.log",
+    "epochs_reached": 29,
+    "lessons": [
+      "When changing architecture (LayerNorm → RMSNorm), the save/load code path must be checked FIRST, before launching training. I added the load() fix when web_chat hit the AttributeError, but missed that save() had the same pattern. ~90 min of training compute wasted.",
+      "Pattern for next architecture lever: 1) edit Module class (RMSNorm/RoPE/etc), 2) audit save/load in train.py for any direct attribute access on the swapped components, 3) smoke-test save() with a 1-epoch run, 4) only THEN launch full HYP.",
+      "save() fix has now been applied (getattr around .beta access). HYP39 retry of RMSNorm will save cleanly.",
+      "Training itself ran fine: persona 5/5 at the end means RMSNorm gradients propagated correctly through 29 epochs. The hypothesis (uniform lift / no measurable change) is still untested — we have no eval data."
+    ]
+  },
   "last_result_hyp37": {
     "phase": 10,
     "hypothesis": "HYP37 — HYP36 base (weight 2.0 + persona-Whisper + direct-Toccata + 180min) + 4 reinforcement dialogues (2 nami-lm + 2 Soul) to protect C/G categories.",
