@@ -168,12 +168,13 @@ class TransformerBlock(Module):
     def __init__(self, d_model, d_ff, num_heads):
         # HYP21: bias=False on LN + MHA (per Stanford CS336 Lec 3 / huangserva).
         # SwiGLU was already bias-free; head + out_proj already bias-free.
-        # HYP38: LayerNorm → RMSNorm (Llama 1/2/3 / T5 / GPT-NeoX). Drops
-        # mean-centering + beta; ~25% faster per norm. CS336 Lec 3 flags
-        # as "free speed + matched quality" lever at small scale.
-        self.ln1 = RMSNorm(d_model)
+        # HYP38/39 (REVERTed): tested RMSNorm here. At 670K params + 100KB
+        # corpus the "free Llama2 swap" REGRESSED single-turn 47→36/51.
+        # LayerNorm bias + mean-centering appear to help at small scale.
+        # See journal — RMSNorm worth re-trying at d_model ≥ 256 / corpus ≥ 500KB.
+        self.ln1 = LayerNorm(d_model, bias=False)
         self.mha = MultiHeadAttention(d_model, num_heads, bias=False)
-        self.ln2 = RMSNorm(d_model)
+        self.ln2 = LayerNorm(d_model, bias=False)
         self.ff = SwiGLU(d_model, d_ff)
 
     def forward(self, x):

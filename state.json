@@ -19,6 +19,27 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp39": {
+    "phase": 10,
+    "hypothesis": "HYP39 — RMSNorm retry (HYP38 crash fixed). Pure architecture lever, baseline corpus.",
+    "kept": false,
+    "verdict": "REVERT — RMSNorm REGRESSED. Single-turn 36/51 (70.6%) vs baseline 47/51 (92.2%). Multi-turn 13.3% (= baseline, no gain). 21 epochs in 90 min. Llama2 'free upgrade' does NOT transfer to 670K params + 100KB corpus.",
+    "training_log": "/tmp/nami-lm-hyp39-1778598024.log",
+    "epochs_reached": 21,
+    "elapsed_s": 5432.8,
+    "final_bpb": 0.366256,
+    "eval_summary": {
+      "single_turn": "36/51 (70.6%) — Persona 4/5 (lost Kaspa!), Extended 7/10, Topic 11+1p/16, Soul 13/20. WORSE than baseline 47/51 on every category.",
+      "multi_turn_v2": "20/150 turn pct 13.3% — same as baseline (no gain, no loss). B.Whisper 6.7% (-0pp), I.Toccata 0% (= baseline, no improvement)."
+    },
+    "lessons": [
+      "RMSNorm Llama2 result DOES NOT transfer to small scale. At 670K params + 100KB corpus, LayerNorm's β (bias) + mean-centering BOTH appear to help. The 'free 25% speed + matched quality' claim is conditional on scale.",
+      "Possible mechanism: at small d_model (96), variance estimate is noisy → mean-centering stabilizes. At Llama 70B's d_model (8192), Law of Large Numbers makes mean estimate stable enough to skip.",
+      "Possible mechanism 2: β absorbs residual stream drift. Small models accumulate more drift per layer (fewer attention heads to average over). Removing β forces gradient through γ alone which is less expressive.",
+      "Architectural Llama2-canonical levers need RE-VALIDATION at our scale, not just blind transfer. Next try: RMSNorm at d_model 256 / corpus 500KB, OR keep LayerNorm bias=False (HYP21 baseline) — the best small-scale configuration.",
+      "Cost: 90min training + ~10 min eval = HYP38 (crashed) + HYP39 (failed) = 3+ hours total compute for RMSNorm experiment. Net learning: confirmed LayerNorm bias=False is local optimum for our scale."
+    ]
+  },
   "last_result_hyp38": {
     "phase": 10,
     "hypothesis": "HYP38 — RMSNorm replaces LayerNorm (Llama 1/2/3 canonical). First architecture lever.",
