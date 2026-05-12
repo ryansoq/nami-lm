@@ -19,6 +19,46 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp41": {
+    "phase": 10,
+    "hypothesis": "HYP41 — realign baseline retrain (fix vocab drift). Same config as v0.3.1.1, fresh corpus regen.",
+    "kept": true,
+    "verdict": "KEEP as new working baseline v0.3.1.2-realigned. 21 epochs, bpb 0.349. Single-turn 38/51 = 74.5% (lower than v0.3.1.1's 47/51 — corpus grew with new daily files / topic notes, signal more diluted). Multi-turn TBD. But vocab=3779 aligned with current corpus → web_chat works again. PRACTICAL BASELINE for ongoing HYPs.",
+    "training_log": "/tmp/nami-lm-hyp41-realign-1778612201.log",
+    "epochs_reached": 21,
+    "elapsed_s": 5493.5,
+    "final_bpb": 0.349368,
+    "eval_summary": {
+      "single_turn": "38/51 (74.5%) — Persona 3+1p/5, Extended 8+1p/10, Topic 11/16, Soul 14/20",
+      "note": "Lower than v0.3.1.1's 47/51 because corpus is now bigger (more daily/topic content), same training budget less per-Q exposure"
+    },
+    "lessons": [
+      "Vocab drift is real: corpus regen between HYPs grows vocab (3738→3779 in ~10 days). Old baseline weights become incompatible.",
+      "Realign retrain is now part of the workflow: every ~10 HYPs, refresh baseline against current corpus to keep weights+vocab aligned.",
+      "Single-turn dropped 47→38 partly from undertraining (21 vs ideal 30 ep) and partly from corpus dilution. Future HYPs should account for this floor — improvements are relative to 38/51 now, not 47/51."
+    ]
+  },
+  "last_result_hyp40": {
+    "phase": 10,
+    "hypothesis": "HYP40 — corpus augmentation. Each canonical Q gets +啊?/+嗎? variants weight 0.2.",
+    "kept": false,
+    "verdict": "REVERT — augmentation MECHANISM works (raw 'Nami是誰啊？' → '厲害的AI工程師夥伴' canonical), but undertrained at 9 epochs (corpus 2.8x slowed each epoch to ~680s). Single-turn 37/51 = 72.5%, multi-turn 12.0%. Particle robustness validated but cost too high without longer budget.",
+    "training_log": "/tmp/nami-lm-hyp40-1778605287.log",
+    "epochs_reached": 9,
+    "elapsed_s": 6017.6,
+    "final_bpb": 0.406154,
+    "eval_summary": {
+      "single_turn": "37/51 (72.5%) — Persona 4/5 (lost ClawX), Extended 9/10, Topic 11/16, Soul 13/20",
+      "multi_turn_v2": "18/150 (12.0%) — below baseline 13.3%",
+      "raw_particle_test": "Nami是誰啊？→'厲害的AI工程師夥伴' ✅, Nami是誰嗎？→'厲害的AI工程師夥伴' ✅, Kaspa是什麼啊？→'基於BlockDAG的區塊鏈' ✅, Ryan是誰啊？→contaminated, Nami是誰呢？→noise (呢 not in trained variants)"
+    },
+    "lessons": [
+      "Augmentation generates ROBUST behavior on trained variants — particle 啊/嗎 successfully handled. The OOD UX fix Ryan asked for works at the training level.",
+      "But corpus 2.8x → epoch time 2.8x → 90min budget gives only 9 epochs vs needed ~25. Severely undertrained. Net effect: gain robustness, lose canonical accuracy.",
+      "Next HYP design: HYP42+ = same augmentation + TIME_BUDGET 270min (3x baseline). Should give ~22 epochs at this corpus size. Then primary metrics shouldn't regress.",
+      "Side effect of every REVERT: vocab keeps drifting because the corpus regen pulls in fresh daily files / topic notes between HYPs. Baseline weights from earlier HYPs become incompatible with current vocab. HYP41 realign retrain establishes a new aligned baseline for current corpus state."
+    ]
+  },
   "last_result_hyp39": {
     "phase": 10,
     "hypothesis": "HYP39 — RMSNorm retry (HYP38 crash fixed). Pure architecture lever, baseline corpus.",
