@@ -19,6 +19,43 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp37": {
+    "phase": 10,
+    "hypothesis": "HYP37 — HYP36 base (weight 2.0 + persona-Whisper + direct-Toccata + 180min) + 4 reinforcement dialogues (2 nami-lm + 2 Soul) to protect C/G categories.",
+    "kept": false,
+    "verdict": "REVERT — Soul anchor WORKED (G.Soul 6.7% → 20% +13.3pp!) but trade-off shifted to E.Relationship (33.3% → 20% below floor 28%) + J.Routine (26.7% → 6.7% collapsed). C.nami-lm partially recovered (0% → 6.7% but still < 9.3% floor). Net: 2 floor breaks (C, E) vs HYP36's 2 (C, G) — different categories failed.",
+    "training_log": "/tmp/nami-lm-hyp37-1778568070.log",
+    "epochs_reached": 43,
+    "elapsed_s": 10846.3,
+    "final_bpb": 0.188623,
+    "eval_summary": {
+      "single_turn": "42/51 (82.4%) — same headline, Soul 17/20 (HYP36 was 15), Extended 8/10 (HYP36 was 10).",
+      "multi_turn_v2": {
+        "turn_hit": 30,
+        "turn_total": 150,
+        "turn_pct": 20.0,
+        "per_category": {
+          "A.Kaspa": "20% (+6.7pp ✓)",
+          "B.Whisper": "20% (+20pp ✅)",
+          "C.nami-lm": "6.7% (-6.7pp, BELOW floor 9.3%) ❌ — only partial recovery",
+          "D.Identity": "13.3% (+6.7pp)",
+          "E.Relationship": "20% (-20pp, BELOW floor 28%) ❌ — NEW failure",
+          "F.Workflow": "20% (+6.7pp ✓)",
+          "G.Soul": "20% (+6.7pp ✓ HELD! anchor worked +13.3pp vs HYP36)",
+          "H.Aqua": "26.7% (= baseline ✓)",
+          "I.Toccata": "46.7% (+46.7pp ✅✅ — best ever, locked in)",
+          "J.Routine": "6.7% (= baseline) — dropped from HYP36's 26.7%"
+        }
+      }
+    },
+    "lessons": [
+      "Soul anchor MECHANISM CONFIRMED — G.Soul jumped 6.7% → 20% with 2 anchor dialogues. The 'embed-not-add reinforcement' pattern works for individual categories.",
+      "But same crowd-out budget — 4 anchor dialogues lifted G and partially C, at cost of E (Relationship -20pp) and J (Routine -20pp). The hammer just hit different nails.",
+      "Across HYP31-37, the persistent observation: at 673K params + ~22-44 epochs, model has fixed embedding capacity for ~75-80% of category coverage. Each HYP redistributes which 20-25% breaks.",
+      "Next direction options: (a) Llama-canonical lever like RMSNorm (HYP-Llama-A) — uniform capability lift not category-redistribution, (b) write 10+ anchor dialogues to cover ALL categories, push everything up, (c) accept this as ceiling and ship HYP37 weights as 'enriched but tradeoff' v0.4.0-experimental for voice-nami-lm to use.",
+      "I.Toccata 46.7% is the most stable win across HYPs — direct phrasing + corpus density got it locked in. This signal is real, even though strict KEEP gate keeps failing on other categories."
+    ]
+  },
   "last_result_hyp36": {
     "phase": 10,
     "hypothesis": "HYP36 — HYP34 design + TIME_BUDGET 180 min. Same dialogues + weight 2.0 + d_model 96, doubled budget.",
