@@ -19,6 +19,43 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp36": {
+    "phase": 10,
+    "hypothesis": "HYP36 — HYP34 design + TIME_BUDGET 180 min. Same dialogues + weight 2.0 + d_model 96, doubled budget.",
+    "kept": false,
+    "verdict": "REVERT but CLOSEST TO KEEP across HYP31-36. 44 epochs reached (vs HYP34's 22 — double as designed). Both primary targets HIT (Whisper 26.7%, Toccata 46.7%). Multi-turn overall 20.7% — BEST OF ALL HYPs. Single-turn 42/51 = same as HYP34. Floor breaks: C.nami-lm 0% AND G.Soul 6.7% (HYP34 had 3 floor breaks, HYP36 has 2 — progress).",
+    "training_log": "/tmp/nami-lm-hyp36-1778556015.log",
+    "epochs_reached": 44,
+    "elapsed_s": 10824.5,
+    "final_bpb": 0.180845,
+    "eval_summary": {
+      "single_turn": "42/51 (82.4%) — same as HYP34, distribution slightly better (Extended 10/10 vs 9/10+1p, Topic 12+1p vs 11+1p, Soul 15 vs 14+1p)",
+      "multi_turn_v2": {
+        "turn_hit": 31,
+        "turn_total": 150,
+        "turn_pct": 20.7,
+        "per_category": {
+          "A.Kaspa": "13.3% (= baseline) ✓ HELD",
+          "B.Whisper": "26.7% (+26.7pp ✅)",
+          "C.nami-lm": "0% (-13.3pp, BELOW floor) ❌ — COLLAPSED",
+          "D.Identity": "13.3% (+6.7pp)",
+          "E.Relationship": "33.3% (above floor 28%) ✓",
+          "F.Workflow": "20.0% (+6.7pp) ✓",
+          "G.Soul": "6.7% (-6.7pp, BELOW floor) ❌",
+          "H.Aqua": "20.0% (just above floor 18.7%) ✓",
+          "I.Toccata": "46.7% (+46.7pp ✅✅ — best ever)",
+          "J.Routine": "26.7% (+20.0pp) ✓"
+        }
+      }
+    },
+    "lessons": [
+      "Doubled budget DELIVERED — 44 epochs vs HYP34's 22, bpb 0.181 vs 0.325, overall multi-turn 20.7% vs 16.0%. Time helps.",
+      "Toccata went from 27% (HYP34) → 46.7% (HYP36). Direct phrasing + doubled training = best Toccata signal across all HYPs. The 'easier signal' interpretation from HYP33/34 confirmed.",
+      "But C.nami-lm collapsed to 0% (worse than HYP34's 6.7%) and G.Soul still 6.7% — these two categories appear MOST sensitive to embedding crowd-out from new content, regardless of weight or training time.",
+      "Path forward: need to PROTECT C.nami-lm and G.Soul specifically. Options: (a) write 1-2 dialogue-pairs anchoring nami-lm + Soul that reinforce existing context, (b) drop dialogue weight to 1.5, (c) shrink new dialogue count 10→6 (drop 2 Whisper + 2 Toccata), (d) Llama-canonical lever (RMSNorm) for general capability lift.",
+      "Multi-turn 20.7% is a real milestone — first time > 20% across all HYPs. Even though strict criteria says REVERT, this is the cleanest forward path proof we have."
+    ]
+  },
   "last_result_hyp35": {
     "phase": 10,
     "hypothesis": "HYP35 — d_model 96→128 (+41% params 673K→947K) + HYP34 design. Capacity bottleneck hypothesis: bigger model should absorb +30 weighted chunks without crowd-out.",
