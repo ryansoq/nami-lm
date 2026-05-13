@@ -653,3 +653,68 @@ current model where false-positive cut is rarer than degen artifact.
 saving compute and giving the model fewer chances to drift. Will pair
 with eval gate update (strict mode after this guard would measure model
 + post-process together).
+
+## 2026-05-13 22:31 — HYP46 REVERT — saturation point identified
+
+HYP46 (epochs 30→50 via 270min budget, cosine target 45): 50 epochs / 16204s
+wall / bpb 0.0309 / persona 5/5 prefix-pass.
+
+**Results vs HYP44B baseline (v0.3.1.4-cosine):**
+- Strict: 37 → **39/51** (+2pp = 76.5%)
+- Strong: 50 → **48/51** (-2 = 94.1%)
+- bpb: 0.0323 → **0.0309** (-4%)
+- Persona strict: 2/5 → **4/5** (+2 big)
+- **Multi-turn: 21.3% → 17.3% (-4pp)** ← the killer
+- Dialogues passed: 2 → 0
+
+Local-distribution metrics (strict + bpb) improved; generalization metric
+(multi-turn dialogue) regressed -4pp. G.Soul collapsed -20pp (33.3% → 13.3%).
+
+### Decision: REVERT
+
+Per §2 multi_axis: bpb improved + persona maintained + eval-strong within
+5pp cap → technically KEEP. But the spirit of multi_axis is "improve at
+least one without regressing meaningful axes". Multi-turn isn't in the §2
+list but it IS the harder real-world metric. -4pp regression on the
+best-ever-baseline (HYP44B 21.3%) is a meaningful loss.
+
+cp model_weights.json.v0.3.1.4-cosine.bak → model_weights.json executed.
+Web_chat restarted on v0.3.1.4-cosine. Smoke test confirms canonical answer.
+
+### Lessons
+
+1. **Phase 10 saturation = 30 ep / 180min / 4 layers**. More epochs at
+   this corpus size don't pay. They overfit single-turn templates while
+   eroding multi-turn coherence.
+2. **Strict improving but multi-turn dropping = overfit signature.** When
+   training-distribution metric improves while held-out metric regresses,
+   trust the held-out.
+3. **Category-specific collapse is informative.** G.Soul dropping -20pp
+   while C.nami-lm gained +6.7pp tells us: the deeper-context categories
+   (Soul, Relationship, Identity, Whisper) suffer first under overfit;
+   the rote-lookup categories (nami-lm) gain.
+4. **Cost of REVERT = 4.5 hours wall, ~$0 CPU.** Information gained:
+   the saturation point for phase 10. Worth it.
+
+### Phase 10 closure stance
+
+v0.3.1.4-cosine is the phase 10 frontier and likely WILL BE the final
+phase 10 baseline. Single-turn ceiling ~98% strong / 73% strict, multi-turn
+ceiling ~21% — these are the practical limits of 762K params at 100KB
+corpus with our methodology.
+
+Phase 11 (corpus 100KB → 500KB) is the next big unlock. Should start
+the data work immediately, leaving compute idle until corpus is ready.
+
+### Next (post-HYP46 REVERT)
+- **HYP47 (data work, no train)**: extract book → Q&A from
+  clawd/memory/topics/book-{linkers-loaders, llvm, compiler, cpp, mlir}.md.
+  Target +1500-2500 pairs, corpus 100KB → ~250KB.
+- **HYP48 (data work)**: dialogues.py expansion 69 → 200, focus on the
+  3 categories where multi-turn is weakest (B.Whisper, C.nami-lm, I.Toccata
+  all at 13.3%).
+- **HYP49 (training)**: re-train on expanded corpus, same num_layers=4
+  + cosine schedule, expect bpb similar or higher (more data) but multi-turn
+  push past 25%.
+
+Quiet hours start in ~30 min (23:00). No new training launch tonight.

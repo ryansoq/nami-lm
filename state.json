@@ -19,6 +19,29 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp46": {
+    "phase": 10,
+    "hypothesis": "HYP46 — epochs 30→50 + budget 180→270 min on HYP44B (v0.3.1.4-cosine) baseline. cosine target 45 ep. Explores phase 10 saturation: does extra 20 epochs lift strict 37→40+ or just deeper overfit?",
+    "kept": false,
+    "verdict": "REVERT — multi-turn regressed 21.3% → 17.3% (-4pp), dialogue_passed 2/50 → 0/50, strong 50 → 48 (-2). Strict +2 (37→39) and bpb -4% (0.0323→0.0309) are real but insufficient to overcome multi-turn loss. Lesson: more epochs at this scale = overfit single-turn canonical templates at cost of dialogue coherence. v0.3.1.4-cosine remains the right baseline. cp .bak → model_weights.json executed.",
+    "training_log": "/tmp/nami-lm-hyp46-1778655961.log",
+    "epochs_reached": 50,
+    "elapsed_s": 16204,
+    "final_bpb": 0.0309,
+    "params": 762144,
+    "eval_summary": {
+      "single_turn_strict": "39/51 (76.5%) — Persona 4/5 (vs HYP44B 2/5, +2), Extended 7/10 (+1), Topic 14/16 (=), Soul 14/20 (-1).",
+      "single_turn_strong": "48/51 (94.1%) — vs HYP44B 50, -2 strong (Soul -1, Extended partial -1).",
+      "multi_turn_v2": "26/150 turn pct 17.3% — vs HYP44B 21.3%, REGRESSED -4pp. dialogue_passed 0/50 (vs HYP44B 2/50, -2). Per-category: A.Kaspa 13.3% (-6.7), B.Whisper 6.7% (-6.7), C.nami-lm 13.3% (+6.7), D.Identity 13.3% (-6.7), E.Relationship 33.3% (-6.7), F.Workflow 26.7% (=), G.Soul 13.3% (-20), H.Aqua 26.7% (+6.7), I.Toccata 6.7% (-6.7), J.Routine 20% (=)."
+    },
+    "lessons": [
+      "Phase 10 saturation point identified: 30 epochs / TIME_BUDGET 180min / num_layers 4 is the sweet spot. Going past it (45-50 ep with cosine targeting 45) overfits single-turn templates at multi-turn cost.",
+      "Strict +2 + bpb -4% are LOCAL minima signals (training distribution improved) while multi-turn -4pp is the GENERALIZATION signal (held-out coherence dropped). Always trust generalization over training metrics.",
+      "G.Soul collapsed from 33.3% → 13.3% (-20pp): the categories with deeper context tracking suffer first under overfit. C.nami-lm gained +6.7pp because that category is more rote (lookup-style).",
+      "Practical phase 10 budget recommendation: stick with 180min/30 ep until corpus expands (phase 11). More epochs is not the lever to push at 100KB corpus.",
+      "REVERT cost: 4.5 hours wall + ~$0 (CPU). Information gained: saturation point + overfit signature. Worth it."
+    ]
+  },
   "last_result_hyp44b": {
     "phase": 10,
     "hypothesis": "HYP44B — cosine LR schedule fix. `time_budget/7.0` → `max(20, time_budget/360)`. Phase 10 隱形 bug 修正：cosine schedule 假設 1542 ep / 實際 ~30 ep，從未退火。1-line fix on top of HYP43 baseline.",
