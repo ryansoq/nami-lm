@@ -351,7 +351,7 @@ def compute_bpb(loss, tokenizer, texts):
     return loss / math.log(2) / avg
 
 
-TIME_BUDGET = 90 * 60  # phase 7 HYP20: 60→90 min — HYP19 hit ep 90 at 60min boundary with bpb still descending. Push 30 more min to let existing HYP18 anchors deepen without corpus expansion.
+TIME_BUDGET = 180 * 60  # phase 10 HYP43: 90→180 min — num_layers 3→4 adds ~30% params, needs more budget to converge (HYP35 d_model bump severely undertrained at 90min).
 
 
 # Phase 0 persona probes — questions taken from synthesize_qa.py's
@@ -405,7 +405,7 @@ def train(epochs: int = 200, lr: float = 0.002,
     # experiment showed scaling up just under-fits at our compute
     # budget (Chinchilla math: more params without proportional
     # compute = worse). Phase 0 setup remains the floor.
-    d_model, d_ff, num_heads, num_layers = 96, 256, 6, 3
+    d_model, d_ff, num_heads, num_layers = 96, 256, 6, 4  # HYP43: 3→4 depth, +210K params (~30%)
     model = GPTMini(
         vocab_size=tokenizer.vocab_size,
         d_model=d_model, d_ff=d_ff, num_heads=num_heads,
