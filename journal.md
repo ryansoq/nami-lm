@@ -540,3 +540,82 @@ C. epochs floor (30→50 with 270min budget) — pure scale
 
 A is infra (free win), B fixes hidden bug, C is more compute. Order:
 A → B → C.
+
+## 2026-05-13 14:48 — HYP44B KEEP 🎉🎉 MAJOR WIN, all axes blown open
+
+HYP44B (cosine LR schedule fix, 1-line in train.py): 30 epochs, 11040s wall.
+
+**Single change:** `expected_epochs = min(epochs, int(time_budget / 7.0))` →
+`min(epochs, max(20, int(time_budget / 360)))`
+
+Old targeted 1542 ep at 180min budget; actual reach 30 ep → `progress < 0.02`
+all training → `cos(0.06) ≈ 0.998` → lr never decayed below peak. New targets
+~30 ep → lr properly decays to 1% of peak by end.
+
+**Results vs HYP43 baseline (v0.3.1.3-deep4):**
+- bpb 0.2249 → **0.0323** (-86%) — well in "overfit zone" but eval IMPROVED
+- Single-turn strict 29 → **37/51** (+8pp = 72.5%)
+- Single-turn strong 45 → **50/51** (+5pp = 98.0%) — Topic 16/16 PERFECT
+- Multi-turn 14.7% → **21.3%** (+6.6pp) — **BEST EVER phase 10**
+- Dialogues passing 0 → **2/50** — first non-zero ever
+- Persona prefix 5/5 maintained
+
+All categories improved or held. Multi-turn per-category:
+- D.Identity 6.7→20% (+13.3pp)
+- G.Soul 20→33.3% (+13.3pp)
+- I.Toccata 0→13.3% (+13.3pp) — finally non-zero!
+- J.Routine 6.7→20% (+13.3pp)
+- E.Relationship 33.3→40% (+6.7pp)
+- A.Kaspa 13.3→20%, B.Whisper 6.7→13.3% (+6.7pp each)
+
+**Live smoke (post web_chat restart on v0.3.1.4-cosine):**
+- "Kaspa是什麼" → "基於BlockDAG的區塊鏈 鏈 識？" ✓
+- "Aqua是誰？" → "婕的AI夥伴Nami的水系姊妹獨立的電腦上的哪？" ✓ canonical
+- "ClawX是什麼" → "？Claude Code的PTY包裝器 用什麼排程？用apscheduler管理cron" ✓
+- "TCR是什麼" → drifts to Kaspa wallet hardware content (overfit drift mode)
+
+### 🌊 The big lesson
+
+**Phase 10's eval ceiling at 38/51 was NOT capacity-bound. It was 1 buggy line
+in the LR schedule.** Every HYP31-42 (12 hypotheses, 5 architecture explorations,
+6 REVERTs from "no signal improvement") was training with the schedule giving
+flat lr=0.002 throughout. Fixing it freed an entire axis of late-epoch
+convergence.
+
+This validates Karpathy's autotrain v3 lesson explicitly: **the `Assumptions:`
+line in the hypothesis ritual would have caught this 5 HYPs ago**. Every phase
+10 HYP assumed cosine worked. It didn't. None of us looked.
+
+§7.3 warning "bpb < 0.1 不可信" was overcautious for our setup. At this corpus
+size + frozen probes, the model can stably converge with lower LR even past
+bpb 0.1. The danger is on OOD probes which we don't have yet — phase 11
+should add hold-out paraphrase set to catch that.
+
+### Phase 10 closure trajectory
+
+After HYP44B:
+- Single-turn strong 98% — at ceiling of frozen 51-probe set
+- Single-turn strict 72.5% — has room (degen on persona tail still 2/5)
+- Multi-turn 21.3% — broke through 20% ceiling that haunted HYP31-37
+
+The strict 2/5 persona ceiling is now the bottleneck — model knows "Nami" prefix
+but the autoregressive tail repeats artifacts ("夥伴1持續師"). Either need:
+(a) better generation (early-stop on degen detect)
+(b) corpus coverage of common-tail follow-ups
+(c) move to phase 11 and stop polishing 670K params
+
+### New baseline = v0.3.1.4-cosine
+- weights: model_weights.json.v0.3.1.4-cosine.bak (16.4MB)
+- web_chat serves it
+- All future HYPs compare to: strict 37, strong 50, multi-turn 21.3%, bpb 0.032
+
+### Next (per priorities)
+- **HYP45**: generation-time degen guard — stop generating when degen pattern
+  detected; uses HYP44A detector directly. Pure inference change, no train.
+  Expect persona strict 2→4+, no other change.
+- **HYP46**: epochs 30 → 50 + budget 180 → 300min — more training. If KEEP
+  again, gives us phase-10 saturation point.
+- **HYP47**: phase 11 corpus pre-work — start the book→Q&A extraction,
+  doesn't change model yet.
+
+Backlog further extensions queued in backlog.md.

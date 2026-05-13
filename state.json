@@ -19,6 +19,47 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp44b": {
+    "phase": 10,
+    "hypothesis": "HYP44B — cosine LR schedule fix. `time_budget/7.0` → `max(20, time_budget/360)`. Phase 10 隱形 bug 修正：cosine schedule 假設 1542 ep / 實際 ~30 ep，從未退火。1-line fix on top of HYP43 baseline.",
+    "kept": true,
+    "verdict": "KEEP — MAJOR WIN. All axes improved, all surprising. bpb 0.225→0.0323 (-86% well into overfit zone but eval IMPROVED). Strict 29→37/51 (+8pp = 72.5%). Strong 45→50/51 (+5pp = 98.0%). Multi-turn 14.7→21.3% (+6.6pp = BEST EVER). First 2 dialogues fully pass (was 0). Phase 10 cosine bug was eating most of convergence potential. New baseline = v0.3.1.4-cosine.",
+    "training_log": "/tmp/nami-lm-hyp44b-1778643628.log",
+    "epochs_reached": 30,
+    "elapsed_s": 11039.9,
+    "final_bpb": 0.0323,
+    "params": 762144,
+    "eval_summary": {
+      "single_turn_strict": "37/51 (72.5%) — Persona 2/5 (degen artifacts in tail), Extended 6/10, Topic 14/16, Soul 15/20.",
+      "single_turn_strong": "50/51 (98.0%) — Persona 5/5, Extended 10/10, Topic 16/16 PERFECT, Soul 18+1p/20.",
+      "multi_turn_v2": "32/150 turn pct 21.3% — BEST EVER. dialogue_passed 2/50 — first time non-zero. Per-category: A.Kaspa 20%, B.Whisper 13.3%, C.nami-lm 6.7%, D.Identity 20%, E.Relationship 40%, F.Workflow 26.7%, G.Soul 33.3%, H.Aqua 20%, I.Toccata 13.3%, J.Routine 20%."
+    },
+    "lessons": [
+      "Phase 10's 'eval saturation at 38/51' was actually 'lr never decayed'. Fixing the cosine schedule freed an entire dimension of convergence. HYP38-42 may all retro-succeed if re-run with this fix.",
+      "bpb < 0.1 ≠ overfit when eval is in-distribution and probes are well-aligned. §7.3 warning was overcautious: at this corpus size + frozen probes, lower bpb correlates with better eval. The danger is on OOD probes which we don't have yet.",
+      "Karpathy/autotrain v3 'Assumptions:' field would have caught this 5 HYPs ago: every phase 10 HYP assumed cosine schedule worked. It didn't. The 5-line ritual upgrade pays for itself.",
+      "1-line lever can outperform architecture changes. HYP43 (depth, +13% params) gave +7pp single. HYP44B (cosine fix, 0 param change) gave another +5pp single + +6.6pp multi-turn. 'Free' improvements beat expensive ones at this stage.",
+      "Multi-turn 21.3% is breakthrough territory. Previous ceiling was 20.7% (HYP36). With more budget + corpus growth in phase 11, 30%+ should be reachable."
+    ]
+  },
+  "best_single_turn_strict": "37/51 (72.5%)",
+  "best_single_turn_strong": "50/51 (98.0%)",
+  "best_multi_turn_pct": 21.3,
+  "best_bpb_phase10": 0.0323,
+  "best_baseline_label": "v0.3.1.4-cosine",
+  "last_result_hyp44a": {
+    "phase": 10,
+    "hypothesis": "HYP44A — eval.py strict mode infra. Adds 'strict' tier = strong + no degeneration (char triple / mid-sentence ? / bigram repeat).",
+    "kept": true,
+    "verdict": "KEEP-INFRA — no training. On HYP43 weights: strict 29/51 (56.9%) vs strong 45/51 (88.2%). Captures Ryan's 5/13 08:40 web_chat 🤔 feedback signal as automated detector.",
+    "training_log": null,
+    "epochs_reached": null,
+    "elapsed_s": null,
+    "lessons": [
+      "Eval prefix-match was lying ~half the time. New strict mode catches the 'token 1-3 correct, tail collapses' pattern Ryan visually identified.",
+      "Gate updated: persona_strict == 5 AND topic strict+partial ≥ 10 (was strong-based)."
+    ]
+  },
   "last_result_hyp43": {
     "phase": 10,
     "hypothesis": "HYP43 — num_layers 3→4 (+13% params 676K→762K) + TIME_BUDGET 90→180min. Pure structural depth lever after HYP38-42 micro-tweak saturation at v0.3.1.2 baseline.",

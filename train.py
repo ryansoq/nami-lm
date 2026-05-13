@@ -441,8 +441,15 @@ def train(epochs: int = 200, lr: float = 0.002,
     print("🏋️  Training...")
     start = time.time()
     warmup_epochs = 2
+    # HYP44B: cosine schedule target = realistic epochs in budget.
+    # Old: `time_budget / 7.0` → 1542 ep target at 180min budget. Way off:
+    # actual reach is 30 ep at 4-layer / 22 ep at 3-layer. progress < 0.02
+    # all training → cos ≈ 1 → lr stays flat at peak. No decay.
+    # New: assume ~6 min/ep (4-layer; 3-layer ~5min). For 180min budget
+    # → ~30 ep target. cosine actually decays late epochs to lr*0.5*(1+cos(π))
+    # = 0 (clamped to lr*0.01). Matches Llama-style cosine to 10% of peak.
     expected_epochs = (
-        min(epochs, int(time_budget / 7.0)) if time_budget else epochs)
+        min(epochs, max(20, int(time_budget / 360))) if time_budget else epochs)
 
     avg_loss = float("inf")
     epoch = 0
