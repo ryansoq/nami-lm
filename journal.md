@@ -481,3 +481,62 @@ the d_model FFN inflation that drowned HYP35. Predict params 670K→880K
   unavoidable at this scale?
 
 Silent (REVERT, no Ryan ping).
+
+## 2026-05-13 11:32 — HYP43 KEEP 🎉 first real architecture win
+
+HYP43 (num_layers 3→4, +13% params, 180min budget): 30 epochs, 11010s wall.
+
+**Results vs v0.3.1.2-realigned baseline:**
+- Single-turn 38/51 → **45/51** (+7pp = 88.2%)
+- bpb 0.35 → **0.2249** (-36%)
+- Persona 3+1p/5 → **5/5 strong**
+- Multi-turn 13.3% → 14.7% (+1.4pp — modest but positive)
+
+All 3 hard axes (§2) improved → KEEP per multi_axis criteria.
+
+Per-category single-turn:
+- A. Core persona: 5/5 (was 3+1p) ✓
+- B. Extended: 10/10 (was 8+1p) ✓
+- C. Topic: 13/16 (was 11) ✓
+- D. Soul: 17/20 (was 14) ✓
+
+Per-category multi-turn (vs baseline):
+- B.Whisper 6.7% (+6.7pp)
+- G.Soul 20% (+13.3pp) — big win
+- H.Aqua 20% (-6.7pp) — small regression
+- Others same or close
+
+**Live smoke test on web_chat (post-restart):**
+- "Nami是誰" → "厲害的AI工程師夥伴姊妹 純NumPy？" (vs baseline "厲害的的？") ✓
+- "妳是誰？" → "Nami的AI夥伴是什麼？" (partial — "AI夥伴" right, suffix wrong)
+- "Kaspa是什麼" → "基於BlockDAG的區塊鏈..." ✓
+- "ClawX是什麼" → "Claude Code的PTY包裝器..." ✓
+- "Nami是誰啊" → "厲害的AI工程師夥伴..." ✓ (particle robust)
+
+The "first 10-15 tokens correct, tail bleeds into other concepts" pattern
+persists but the BODY is now coherent vs baseline's broken-after-3-tokens.
+
+### Lessons
+- Depth lever (num_layers 3→4) IS the right scale-up axis at this scale.
+  +13% params is much cheaper than d_model bump (+41% in HYP35).
+- 180min budget gave 30 epochs at 4-layer (vs 22 at 3-layer 90min). Per-
+  epoch grew ~20% (5.15min→6.15min) — exactly the depth overhead.
+- v0.3.1.3-deep4 (45/51) ALMOST recovers v0.3.1.1's 47/51 ceiling, despite
+  17 fewer epochs trained. Depth > extra epochs.
+- Cosine schedule bug (§8.5) didn't block KEEP. HYP44 candidate (fixing
+  it) might add 1-2pp more.
+
+### New baseline
+- weights: model_weights.json.v0.3.1.3-deep4.bak (16.4MB, vocab 3779, 762K params)
+- web_chat now serves this
+- All future HYPs compare to 45/51 single + 14.7% multi-turn
+
+### Next (HYP44 candidate, per backlog priority + lessons)
+A. Strict eval mode (eval.py: full-string vs prefix match) — get the
+   "real" baseline number, expect 5-15/51 strong. Should ship FIRST so
+   HYP44+ has honest metric.
+B. cosine schedule fix (replace `time_budget/7` with measured ep time)
+C. epochs floor (30→50 with 270min budget) — pure scale
+
+A is infra (free win), B fixes hidden bug, C is more compute. Order:
+A → B → C.
