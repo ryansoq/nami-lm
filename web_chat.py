@@ -80,6 +80,17 @@ def _normalize(text: str) -> str:
     out = text
     for src, dst in pairs:
         out = out.replace(src, dst)
+    # HYP45b — strip whitespace between Latin/digit and CJK characters.
+    # Ryan 5/13 15:11 screenshot showed "Ryan 是誰？" returned garbage while
+    # "Ryan是誰？" returned canonical. WordTokenizer treats " " as a separate
+    # char-level token, shifting position embeddings by one — small model is
+    # brittle to this. Strip the space so both forms tokenize identically.
+    import re
+    # Strip ALL inter-token whitespace: CJK-CJK, CJK-Latin, Latin-CJK,
+    # CJK-digit. Word-level tokenizer treats " " as a separate token which
+    # shifts positions and breaks tiny model's brittle context.
+    out = re.sub(r"([A-Za-z0-9一-鿿])\s+([A-Za-z0-9一-鿿])", r"\1\2", out)
+    out = re.sub(r"([A-Za-z0-9一-鿿])\s+([A-Za-z0-9一-鿿])", r"\1\2", out)  # 2nd pass for overlapping
     # Strip trailing tone particles: ...XX啊？ → ...XX？; ...XX啊 → ...XX
     # Iterate so multi-particle ('呢啊') gets fully cleaned.
     PARTICLES = "啊喔哦喲呀唉呢嗯耶嘿"
