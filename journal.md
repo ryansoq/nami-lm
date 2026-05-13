@@ -434,3 +434,50 @@ Silent.
 
 
 
+
+## 2026-05-13 08:00 — HYP42 reaped REVERT + reflection (HYP31-42 rollup)
+
+HYP42 (particle aug + TIME_BUDGET 180min): trained ~180min, eval single
+38/51 = baseline floor, multi-turn 18/150 = 12.0% (vs baseline 13.3%).
+Per §2 multi_axis: zero axes improved → REVERT. cp v0.3.1.2-realigned.bak
+→ model_weights.json. synthesize_qa.py / train.py git-checkout'd back to
+baseline. web_chat restarted, eval re-confirmed 38/51. corpus regen
+produced 1487 pairs vs 4129 HYP42 chunks (the 2.8× was the augmentation
+itself; reverted).
+
+### HYP31-42 rollup (12 hypotheses, 0 KEEP, 1 baseline-realign-KEEP)
+
+| Range | Lever family | Outcome |
+|---|---|---|
+| HYP31-34 | dialogue weight × design tweaks | best single 47/51 at HYP34, all REVERT on multi-turn floor breaks |
+| HYP35 | d_model 96→128 | severely undertrained (10 ep), 31/51 — bigger model needs more time |
+| HYP36 | HYP34 + 180min budget | 44 ep, multi-turn 20.7% (best ever), C/G floor breaks → REVERT |
+| HYP37 | HYP36 + 4 Soul/nami-lm anchors | Soul lifted +13.3pp, E/J collapsed → REVERT |
+| HYP38-39 | RMSNorm (Llama2 transfer) | save() crashed HYP38, HYP39 36/51 → REVERT — RMSNorm DOES NOT transfer at 670K params |
+| HYP40 | particle aug @ 90min | 9 ep, undertrained, 37/51 → REVERT but mechanism confirmed |
+| HYP41 | realign baseline retrain | KEEP as v0.3.1.2-realigned baseline 38/51 (corpus dilution dropped floor 47→38) |
+| HYP42 | HYP40 + 180min | budget doubled, gain swallowed by aug — net same as baseline → REVERT |
+
+### Pattern
+Single-axis micro-tweaks (architecture swap, aug, budget extension) all
+stuck at the v0.3.1.2-realigned floor (38/51 single, 13.3% multi-turn).
+Each lever pulled one dial and another dial fell back. The model's
+embedding capacity at 670K params × 100KB corpus has saturated for what
+these tweaks can extract.
+
+### Forward
+Need EITHER a non-trivial scale bump (params 670K → 1.3M+, or corpus
+100KB → 500KB) OR a structural lever (multi-task heads, curriculum,
+hard-negative aug). HYP43 candidate: num_layers 3→4 — adds depth without
+the d_model FFN inflation that drowned HYP35. Predict params 670K→880K
+(+30%), needs same 180min budget to converge.
+
+### Open questions
+- Is the multi-turn 13.3% floor an EVAL artifact (probe set frozen at
+  HYP18, may not align with current corpus terms) or a real model
+  ceiling? Test: write 1 anchor probe per category and re-run.
+- Does the particle aug mechanism EVER pay if we go d_model 128 + 270min
+  budget + drop the inference-side normalizer? Or is duplicate-work
+  unavoidable at this scale?
+
+Silent (REVERT, no Ryan ping).

@@ -19,6 +19,26 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp42": {
+    "phase": 10,
+    "hypothesis": "HYP42 — HYP40 particle augmentation (corpus +啊/+嗎 variants weight 0.2) + TIME_BUDGET 90→180min. Buy back epochs HYP40 lost.",
+    "kept": false,
+    "verdict": "REVERT — same single-turn as baseline (38/51 = 74.5%), no axis improved. Multi-turn 12.0% (slightly below baseline 13.3%). Particle robustness mechanism CONFIRMED again on raw tests (Nami是誰啊？→'厲害的的？' weak, but Kaspa是什麼嗎？→'基於BlockDAG的區塊鏈' ✓), but at this corpus size the augmentation crowd-out matches whatever capacity training time recovers. Per §2 multi_axis: zero axes improved → REVERT.",
+    "training_log": "/tmp/nami-lm-hyp42-1778618097.log",
+    "epochs_reached": "TBD-from-log",
+    "elapsed_s": "~10800 (180min budget)",
+    "eval_summary": {
+      "single_turn": "38/51 (74.5%) — SAME as v0.3.1.2-realigned baseline. Persona 3+1p/5, Extended 8+1p/10, Topic 11/16, Soul 14/20.",
+      "multi_turn_v2": "18/150 (12.0%) — below baseline 13.3%. B.Whisper 0%, I.Toccata 0%, G.Soul 6.7%, H.Aqua 26.7%, E.Relationship 33.3%.",
+      "raw_particle_test": "Nami是誰啊？ → weak; Kaspa是什麼嗎？ → ✓ canonical; persona probe 5/5"
+    },
+    "lessons": [
+      "Doubling budget (90→180min) didn't recover what HYP40 lost: even with 2x time, augmentation crowd-out balances training gain — net result identical to baseline.",
+      "Mechanism re-confirmation: augmentation trains particle robustness on the variants it sees, but the inference-time normalizer in web_chat.py already strips the same particles (啊喔哦呀呢嗯…) — duplicate work. Until corpus or model scales up, the frontend strip is the cheaper path.",
+      "Pattern across HYP38-42 (5 REVERTs in a row): single-axis levers (RMSNorm, corpus aug, budget extension) all stuck at the v0.3.1.2-realigned baseline floor. Need EITHER a non-trivial scale bump (params 670K→1.3M+, corpus 100KB→500KB) OR a structural lever (multi-task heads, curriculum, hard-negative aug) — micro-tweaks have saturated.",
+      "HYP43 candidate: num_layers 3→4 (params 670K→~880K, ~30% capacity bump). Lighter than d_model 96→128 (which severely undertrained at HYP35) — layers add depth without proportional FFN inflation."
+    ]
+  },
   "last_result_hyp41": {
     "phase": 10,
     "hypothesis": "HYP41 — realign baseline retrain (fix vocab drift). Same config as v0.3.1.1, fresh corpus regen.",
