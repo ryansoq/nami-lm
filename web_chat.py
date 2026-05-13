@@ -95,17 +95,48 @@ def _normalize(text: str) -> str:
     return out
 
 
+def _trim_degen(answer: str) -> str:
+    """HYP45 — early-stop at degen pattern, anywhere in the output (not just
+    first 20 chars). Cut at the first sign of model collapse:
+
+    - Same char 3+ times in a row ("的的的") → cut before
+    - Same 2-5 char word repeating (X X) → cut at second X
+    - Mid-sentence "？" / "!" after position 5 → cut including it
+    """
+    if len(answer) < 6:
+        return answer
+    # 1. char triple anywhere
+    for i in range(len(answer) - 2):
+        if answer[i] == answer[i + 1] == answer[i + 2]:
+            return answer[: i].rstrip()
+    # 2. Word/bigram repeat — find any 2-5 char unit appearing 2x within first
+    # 30 chars (gap up to 12 chars between occurrences).
+    import re
+    head = answer[:40]
+    for unit_len in (4, 3, 2):
+        for i in range(len(head) - 2 * unit_len):
+            unit = head[i:i + unit_len]
+            # only consider Chinese/Latin/digit units (not punct/whitespace)
+            if not re.match(r"^[一-鿿A-Za-z0-9]+$", unit):
+                continue
+            # search for second occurrence within next 12 chars
+            j = head.find(unit, i + unit_len)
+            if j != -1 and j <= i + unit_len + 12 and i >= 4:
+                return answer[: j].rstrip()
+    return answer.strip()
+
+
 def _trim_answer(answer: str) -> str:
-    """Cut at em-dash separator first (turn boundary), then sentence terminator."""
+    """Cut at em-dash / sentence terminator first, then run HYP45 degen guard."""
     for sep in [" — ", "——", "─ "]:
         i = answer.find(sep)
         if i > 3:
-            return answer[: i].rstrip()
+            return _trim_degen(answer[: i].rstrip())
     for stop in ["。", "！", "？", "\n"]:
         i = answer.find(stop)
         if i > 3:
-            return answer[: i + 1]
-    return answer.strip()
+            return _trim_degen(answer[: i + 1])
+    return _trim_degen(answer.strip())
 
 
 def chat(question: str) -> str:

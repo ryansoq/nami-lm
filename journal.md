@@ -619,3 +619,37 @@ but the autoregressive tail repeats artifacts ("夥伴1持續師"). Either need:
   doesn't change model yet.
 
 Backlog further extensions queued in backlog.md.
+
+## 2026-05-13 15:04 — HYP45 ship 🛡️ generation-time degen guard in web_chat
+
+HYP45 (web_chat _trim_degen): regex-based early-stop on output strings.
+
+**Detects:**
+- Same char 3+ in a row ("的的的")
+- Same 2-5 char unit repeating within first 40 chars (gap ≤ 12)
+
+**Before / after (live web_chat):**
+
+| Q | HYP44B raw | HYP45 trimmed |
+|---|---|---|
+| 妳是誰？ | "Nami的人類夥伴工程師夥伴1持續師.重啟動就會Namiscaffold 不是全陣..." | "Nami的人類夥伴工程師" ✓ |
+| Ryan是誰 | "Nami的人類夥伴工程師夥伴1Fastapscheduler師蒸鎖起腦蓋 怎麼用？" | "Nami的人類夥伴工程師" ✓ |
+| Nami是誰啊 | "...在哪裡不是Ryan 在小當 誰養給我不是Ryan ClawX ClawX ClawX 23:" | "...在哪裡不是Ryan 在小當 誰養給我" (cut before 2nd Ryan-cluster) |
+| Aqua是誰？ | "婕的AI夥伴Nami的水系姊妹獨立的電腦上的哪？" | same (no degen pattern) |
+
+**Scope:** web_chat ONLY (not eval). Eval measures model quality, web_chat
+measures user experience. Don't conflate them — keeping eval honest about
+underlying model state.
+
+**Cost:** 0 params, 0 retraining, ~5ms latency overhead per request.
+
+**Limitation:** trim is conservative. May cut perfectly valid completions
+that happen to have legitimate repeats (e.g. "Telegram優先 LINE備援，
+Telegram第一" — "Telegram" appears twice intentionally). Acceptable for
+current model where false-positive cut is rarer than degen artifact.
+
+**Next future improvement:** apply same logic at GENERATION time in
+`GPTMini.generate()` — stop the autoregressive loop at degen pattern,
+saving compute and giving the model fewer chances to drift. Will pair
+with eval gate update (strict mode after this guard would measure model
++ post-process together).
