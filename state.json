@@ -19,6 +19,46 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp49": {
+    "phase": 10,
+    "hypothesis": "HYP49 — retrain on HYP47+HYP48 expanded corpus (1793 chunks vs 1487, +21%). Same arch (num_layers=4, lr=0.002) + cosine fix + TIME_BUDGET=180min.",
+    "kept": "FORCED-KEEP (vocab-drift constrained)",
+    "verdict": "MIXED — per §2 multi_axis = REVERT. bpb 0.0323→0.0493 (+52% breaks 5% cap), strong 50→47 (-3, within 5pp), multi-turn 21.3→16.7% (-4.6pp), strict 37=37 (same). BUT vocab drifted 3779→4132 over the day's data work + daily file additions → can't cleanly revert to v0.3.1.4-cosine weights (vocab mismatch with current corpus). Pragmatic state: serve HYP49 weights as v0.3.1.5-corpus-expanded, document multi-turn regression, plan HYP50 retrain with better strategy.",
+    "training_log": "/tmp/nami-lm-hyp49-1778742165.log",
+    "epochs_reached": 20,
+    "elapsed_s": 10960.3,
+    "final_bpb": 0.0493,
+    "params": 796032,
+    "eval_summary": {
+      "single_turn_strict": "37/51 (72.5%) — Persona 3/5 (+1), Extended 8/10 (+2), Topic 13/16 (-1), Soul 13/20 (-2).",
+      "single_turn_strong": "47/51 (92.2%) — vs HYP44B 50, -3.",
+      "multi_turn_v2": "25/150 (16.7%) — vs HYP44B 21.3%, -4.6pp REGRESSED. Per-cat: B.Whisper COLLAPSED 13.3→0% (despite HYP48 adding 4 Whisper dialogues), F.Workflow -13.3pp, A.Kaspa -6.7pp. Wins: I.Toccata 0→13.3% (HYP48 worked here), D.Identity +13.3pp, J.Routine +13.3pp."
+    },
+    "lessons": [
+      "Corpus 100KB → 132KB (+27%) wasn't enough to compensate for the +21% chunk dilution. Each canonical Q now sees fewer training steps. The result is uniform decay across most categories — no breakthrough, scattered wins offset by scattered losses.",
+      "HYP48 dialogue additions DID work for I.Toccata (+13.3pp) but FAILED for B.Whisper (-13.3pp). The difference: Toccata content was sparse before, so 4 new dialogues moved the needle. Whisper was already represented in PERSONA_QA + TOPIC_QA + dialogues, so 4 more diluted rather than reinforced.",
+      "Vocab drift mid-experiment hurts: synthesize_qa.py changes + new daily files = vocab 3779 → 4132 means old weights can't load against current corpus. Mitigation: snapshot tokenizer_vocab.json alongside every KEEP commit so revert is exact.",
+      "Phase 11 needs 5x corpus growth (104KB → 500KB+) AND proportional params scale-up (762K → 1.5M+) to overcome the dilution-vs-anchor balance. Halfway moves (+21%) just rearrange the failure modes.",
+      "Strict 37 holding while strong dropped -3 suggests degen patterns increased slightly — tail generation got noisier even though prefix correctness held. Consistent with 'undertrained on expanded corpus' diagnosis."
+    ]
+  },
+  "best_baseline_label_active": "v0.3.1.5-corpus-expanded (HYP49 weights, multi-turn 16.7% < HYP44B 21.3% but vocab-aligned with current corpus)",
+  "phase10_frontier_per_metric": "v0.3.1.4-cosine (strict 37, strong 50, multi 21.3%, bpb 0.0323) — REVERT target if vocab realignment were free",
+  "last_result_hyp48": {
+    "phase": 10,
+    "hypothesis": "HYP48 — dialogues.py +12 multi-turn on weak categories (Whisper 4, Toccata 4, nami-lm 3, KRC-20 1). Data work, no training.",
+    "kept": true,
+    "verdict": "KEEP-DATA — dialogues 59→71, turns 166→201, corpus 1758→1793 chunks (+35), bytes 127→132KB, vocab 4115→4132 (Toccata/Whisper/SilverScript proper nouns). Pairs with HYP47 = corpus 1487→1793 (+21%) ready for HYP49 retrain.",
+    "training_log": null,
+    "epochs_reached": null,
+    "elapsed_s": null
+  },
+  "last_result_hyp47": {
+    "phase": 10,
+    "hypothesis": "HYP47 — synthesize_qa.py: H3 + interview Q&A parsers. Data work, no training.",
+    "kept": true,
+    "verdict": "KEEP-DATA — corpus 1487→1758 chunks (+18%), bytes 104→127KB (+22%), vocab 3779→4115 (+336). Books contribute the bulk: 464 H3 headings + 103 interview Q&A blocks now caught."
+  },
   "last_result_hyp46": {
     "phase": 10,
     "hypothesis": "HYP46 — epochs 30→50 + budget 180→270 min on HYP44B (v0.3.1.4-cosine) baseline. cosine target 45 ep. Explores phase 10 saturation: does extra 20 epochs lift strict 37→40+ or just deeper overfit?",

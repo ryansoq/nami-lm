@@ -79,11 +79,6 @@ RE_BULLET_BOLD_KV = re.compile(
 RE_BULLET_KV = re.compile(
     r"^\s*-\s+([^—:：\-]{2,30})\s*[—\-:：]\s*(.+?)\s*$")
 RE_H2 = re.compile(r"^##\s+(.+?)\s*$")
-# HYP47: H3 + Q&A patterns for book extraction
-RE_H3 = re.compile(r"^###\s+(.+?)\s*$")
-# Interview-style "**Q：question**" line followed by "A：answer" line
-RE_INTERVIEW_Q = re.compile(r"^\*\*Q[：:]\s*(.+?)\s*\*\*\s*$")
-RE_INTERVIEW_A = re.compile(r"^A[：:]\s*(.+?)\s*$")
 
 
 def strip_frontmatter(text: str) -> str:
@@ -146,8 +141,8 @@ def parse_markdown(text: str) -> list[tuple[str, str]]:
                 pairs.append((f"{key}是什麼？", val))
             i += 1
             continue
-        # ## or ### heading followed by next non-empty paragraph
-        m = RE_H2.match(line) or RE_H3.match(line)
+        # ## heading followed by next non-empty paragraph
+        m = RE_H2.match(line)
         if m:
             heading = clean_key(m.group(1))
             j = i + 1
@@ -169,26 +164,6 @@ def parse_markdown(text: str) -> list[tuple[str, str]]:
                     and len(answer) >= 2):
                 pairs.append((f"{heading}是什麼？", answer))
             i = j
-            continue
-        # HYP47: interview-style **Q：...** followed by A：...
-        m = RE_INTERVIEW_Q.match(line)
-        if m:
-            q = clean_key(m.group(1))
-            j = i + 1
-            while j < len(lines) and not lines[j].strip():
-                j += 1
-            if j < len(lines):
-                am = RE_INTERVIEW_A.match(lines[j].strip())
-                if am:
-                    a = clean_value(am.group(1))[:MAX_ANSWER_CHARS]
-                    if q and a and len(q) <= 40 and len(a) >= 2:
-                        # ensure q ends in ?
-                        if not q.endswith(("?", "？")):
-                            q += "？"
-                        pairs.append((q, a))
-                    i = j + 1
-                    continue
-            i += 1
             continue
         i += 1
     return pairs
