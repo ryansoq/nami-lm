@@ -19,6 +19,35 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp54": {
+    "phase": 10,
+    "hypothesis": "HYP54 — retrain on HYP53 paraphrase v2 corpus (1957 chunks, +81 from HYP53). Same arch + 240min budget.",
+    "kept": true,
+    "verdict": "KEEP-INCREMENTAL — paraphrase coverage expanded from HYP52's 8 working to 13 working (8 old + 5 new HYP53 variants). Strict 33 (-1), strong 47 (-1) vs HYP52, both within 5pp cap. Live test confirms: all HYP52-era variants still work (妳叫什麼/什麼是Kaspa/Whisper是什麼啊/什麼是Toccata/Nami是誰啊 all canonical), some new HYP53 variants land (TCR怎麼跑 / Nami怎麼除錯 / AutoMLIR是什麼啊 / Nami怎麼來的), some don't (Nami名字意思 / Nami是chatbot嗎 / phase 11是什麼 / linkers是什麼). Net +5 working variants for -1 strict cost. UX win continues.",
+    "training_log": "/tmp/nami-lm-hyp54-1778837423.log",
+    "epochs_reached": 30,
+    "elapsed_s": 14400,
+    "final_bpb": null,
+    "params": 801888,
+    "eval_summary": {
+      "single_turn_strict": "33/51 (64.7%) — Persona 2/5, Extended 6/10, Topic 13/16, Soul 12/20.",
+      "single_turn_strong": "47/51 (92.2%) — Persona 5/5, Extended 10/10, Topic 15/16, Soul 15+2p/20.",
+      "live_paraphrase_test": "HYP52 old variants 5/5 PASS (all hold), HYP53 new variants 4/8 PASS (TCR怎麼跑/Nami怎麼除錯/AutoMLIR是什麼啊/Nami怎麼來的). Total working: 13."
+    },
+    "lessons": [
+      "75 new paraphrases at same training budget = dilution. ~50% of new variants land vs HYP52's 100% on its 59 variants. The model can absorb finite variants per epoch budget; doubling variants halves landing rate.",
+      "Old paraphrases (HYP52 ones) are STABLE across retrains. They keep working when more variants are added. So paraphrase additions are non-destructive — just budget-limited.",
+      "Strict -1 / strong -1 is the cost of training capacity going to new variants instead of canonical reinforcement. Net UX wins (+5 working variants) outweigh metric loss.",
+      "Phase 11 scale-up signal clear: at 800K params + ~140KB corpus, model is variant-capacity-bound. Need 1.2-1.5M params + 300+ min budget for next round of paraphrase additions to fully land."
+    ]
+  },
+  "best_baseline_label_active": "v0.3.1.7-paraphrase-v2 (802K params, vocab 4193, corpus 1957 chunks, +13 natural-Q variants live)",
+  "last_result_hyp53": {
+    "phase": 10,
+    "hypothesis": "HYP53 — extend paraphrase variants 59→134 across 16 concept groups (TCR/Soul/AutoMLIR/Linux terms/Nami origin/chatbot/Phase/Whisper/Toccata/Aqua/ClawX/Kaspa/numpy-grad/autochat/個性/夢想).",
+    "kept": true,
+    "verdict": "KEEP-DATA — dialogues 130→205, turns 262→337, corpus 1876→1957 chunks (+4%), bytes 137→141KB, vocab 4174→4193 (+19). Pure data work, no train. HYP54 launches retrain on this corpus."
+  },
   "last_result_hyp52": {
     "phase": 10,
     "hypothesis": "HYP52 — retrain on HYP51 paraphrase-expanded corpus (1876 chunks). +59 1-turn paraphrase dialogues for natural-Q coverage.",
