@@ -718,3 +718,78 @@ the data work immediately, leaving compute idle until corpus is ready.
   push past 25%.
 
 Quiet hours start in ~30 min (23:00). No new training launch tonight.
+
+## 2026-05-16 04:00 — HYP43-56 rollup reflection (14 HYPs since HYP42)
+
+§5.2 cadence overdue (10 HYPs trigger). Reflection on phase 10 mid-late:
+
+### Headline numbers (start → end of arc)
+- Strict: 38 (HYP41 baseline) → **34** (v0.3.1.7 active)
+- Strong: 38 → **47** (max 50 at HYP44B/HYP52)
+- Multi-turn: 13.3% → **20.7%** (max 21.3% at HYP44B)
+- bpb: 0.349 → **~0.05** (cosine fix dropped this 7x)
+- Working natural-Q paraphrase variants: 0 → **13** live ✓ ★
+- Corpus: 1487 chunks/104KB → **2017 chunks/144KB** (+38%)
+- Vocab: 3779 → 4212 (+11%)
+- Params: 676K → **802K** (HYP43 num_layers bump)
+
+### KEEP / REVERT log
+| HYP | Lever | Verdict | Why |
+|---|---|---|---|
+| 43 | num_layers 3→4 | **KEEP** | +7pp strict, first arch breakthrough |
+| 44A | strict eval mode | KEEP-infra | exposes overfit lying |
+| 44B | cosine LR fix | **KEEP** | +5pp strong, +6.6pp multi, BEST single change |
+| 45 | gen-time degen trim | KEEP-infra | UX cleaner output |
+| 45b | space-strip normalize | KEEP-infra | Ryan input bug fix |
+| 46 | epochs 30→50 | REVERT | overfit single, multi -4pp |
+| 47 | parser H3+Q&A | KEEP-data | corpus +18% |
+| 48 | dialogues +12 weak-cat | KEEP-data | Toccata 0→13.3% works |
+| 49 | retrain expanded | FORCED-KEEP | multi -4.6pp but vocab-aligned |
+| 50 | epochs 30→45 | REVERT | strict -3, cosine widen no compound |
+| 51 | dialogues +59 paraphrase | KEEP-data | corpus +4% |
+| 52 | retrain on HYP51 | **KEEP** | 8/8 paraphrase land, multi 20.7% |
+| 53 | dialogues +75 v2 | KEEP-data | corpus +4% |
+| 54 | retrain on HYP53 | KEEP-incr | 13 working variants, +5 |
+| 55 | d_model 96→128 | REVERT | 1.3M params undertrained at 14ep |
+| 56 | dialogues +63 v3 | (today) | corpus 2017 chunks |
+
+### Patterns
+1. **One-line architecture changes >>> compute scaling**. HYP44B
+   (cosine fix, 1 line) gave 7× bpb drop. HYP55 (60% more params,
+   25% more compute, 60% more setup) gave WORSE results.
+2. **Data work (HYP47/48/51/53/56) consistently KEEP**. Adding
+   structured corpus content never regresses; just gets diluted if
+   not retrained with adequate budget.
+3. **Paraphrase mechanism is solid**. HYP52 trained 59 variants →
+   8/8 land. HYP54 added 75 more → only 4/8 of NEW ones land
+   (old 8 still hold). At 800K params/137KB corpus, capacity is
+   variant-bound.
+4. **Multi-turn ceiling ~21% at this scale**. HYP44B 21.3% is the
+   high-water mark. Adding data didn't break it but didn't push it.
+5. **CPU + numpy-grad scale wall**: d_model 128 needs 8+ hour
+   trains, infeasible at 16-core machine even reniced. Phase 10
+   is single-scale-bound, phase 11 requires data move not compute.
+
+### What I'd do differently
+- Save tokenizer_vocab.json + phase0_qa.jsonl SNAPSHOT alongside
+  every KEEP commit. Vocab drift between HYPs cost us 3 false
+  REVERT-impossibilities.
+- Stop using `git checkout COMMIT -- file` for temp restore (2
+  silent regressions: 5/13 and 5/15). Use `cp /tmp/snapshot` only.
+- Add `Assumptions:` line to every HYP commit message (autotrain
+  v3 ritual). Would have caught cosine bug 5+ HYPs earlier.
+- Set OMP_NUM_THREADS=4 from the start on every train launch.
+  Avoids 14-core hogging that makes web_chat / agent / TG laggy.
+
+### Phase 11 trigger
+At HYP56 with corpus 2017 chunks vocab 4212 ready for retrain,
+phase 11 starts when:
+- HYP57 retrains on 2017-chunk corpus + d_model 96 + 240min
+- If multi-turn ≥ 22% AND ≥ 15 working paraphrase variants → phase 11
+  formally opens (corpus expansion + larger model trade explored)
+- If multi-turn flat → reconsider compute scaling path
+
+Open questions for phase 11:
+- Should we try BPE tokenizer (HYP1 deferred) — better with 144KB?
+- d_model 128 with 600min budget worth one more try?
+- Synthetic dialogues from Claude (phase 8 deferred) — 100+ multi-turns
