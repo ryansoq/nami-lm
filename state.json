@@ -15,10 +15,31 @@
   "best_bpb_phase7_commit": "pending HYP16 commit",
   "best_eval_total": "36/41 (5/5 + 10/10 + 14/16 + 7/10)",
   "best_eval_total_commit": "pending HYP16 commit",
-  "current_pid": null,
-  "current_started": null,
-  "current_hypothesis": null,
-  "current_log": null,
+  "current_pid": 1291003,
+  "current_started": "2026-05-15T12:48:16+08:00",
+  "current_hypothesis": "phase 10 HYP52 — retrain on HYP51 expanded corpus (1876 chunks +83 from HYP51 paraphrase dialogues). num_layers=4, lr=0.002, cosine fix, TIME_BUDGET 240 min, vocab 4174, params 800K. Predict: strict ≥ 37, multi-turn ≥ 20%, natural-Q variants (妳叫什麼/什麼是X/Nami是誰啊) hit canonical.",
+  "current_log": "/tmp/nami-lm-hyp52-1778820496.log",
+  "last_result_hyp50": {
+    "phase": 10,
+    "hypothesis": "HYP50 — HYP49 baseline + TIME_BUDGET 180→240 min. Buy back epochs HYP49 lost to corpus growth.",
+    "kept": false,
+    "verdict": "REVERT — eval strict 34/51 (-3 vs HYP49 37) on pinned tokenizer eval. Strong 46/51 (-1 vs HYP49 47). bpb 0.0471 vs HYP49 0.0493 marginal. More epochs at 240min didn't compensate — cosine target 40 ep meant lr stayed higher, model didn't deepen the late-epoch fine-tuning. Per-cat: Topic strict 11/16 (HYP49 13 = -2), persona 2/5 (HYP49 3 = -1). Multi-turn skipped (eval-multiturn rebuilds tokenizer + vocab mismatch). HYP50 worse on all measured axes vs HYP49.",
+    "training_log": "/tmp/nami-lm-hyp50-1778805310.log",
+    "epochs_reached": 30,
+    "elapsed_s": 14406.9,
+    "final_bpb": 0.0471,
+    "params": 796032,
+    "eval_summary": {
+      "single_turn_strict": "34/51 (66.7%) — Persona 2/5, Extended 8/10, Topic 11/16, Soul 13/20.",
+      "single_turn_strong": "46/51 (90.2%) — Persona 5/5, Extended 10/10, Topic 15/16, Soul 16/20.",
+      "multi_turn_v2": "skipped — tokenizer drift to 4174 from HYP51 paraphrase commit, eval would mismatch."
+    },
+    "lessons": [
+      "Buying epochs via cosine target widening doesn't compound — HYP46 already showed this. The cosine bug fix was a one-time gain, more epochs after that hits diminishing returns at this scale.",
+      "30 epochs at corpus=1793 (HYP50) ≠ 30 epochs at corpus=1487 (HYP44B). The chunk count matters. HYP50 actually saw MORE batches than HYP44B but each canonical Q got fewer reinforcements.",
+      "Vocab drift kept biting: HYP49 4132, HYP51 added paraphrases → 4174 mid-experiment. Need to lock corpus + vocab snapshot per HYP commit (workflow improvement)."
+    ]
+  },
   "last_result_hyp49": {
     "phase": 10,
     "hypothesis": "HYP49 — retrain on HYP47+HYP48 expanded corpus (1793 chunks vs 1487, +21%). Same arch (num_layers=4, lr=0.002) + cosine fix + TIME_BUDGET=180min.",
