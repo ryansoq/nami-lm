@@ -32,7 +32,8 @@
     "eval_summary": {
       "single_turn_strict": "34/51 (66.7%) — Persona 2/5, Extended 7/10, Topic 12/16, Soul 13/20.",
       "single_turn_strong": "48/51 (94.1%) — Persona 5/5, Extended 10/10, Topic 15/16, Soul 17+1p/20.",
-      "live_paraphrase_test": "8/8 natural-Q variants land canonical answers: 妳叫什麼→Nami, 你的名字是→Nami, 怎麼稱呼妳→Nami, Nami是誰啊→厲害的AI工程師夥伴, 什麼是Kaspa→基於BlockDAG, Whisper是什麼啊→Kaspa上的隱私covenant, 什麼是Toccata→Kaspa主網hardfork升級版本, 誰是Ryan→Nami的人類夥伴工程師."
+      "live_paraphrase_test": "8/8 natural-Q variants land canonical answers: 妳叫什麼→Nami, 你的名字是→Nami, 怎麼稱呼妳→Nami, Nami是誰啊→厲害的AI工程師夥伴, 什麼是Kaspa→基於BlockDAG, Whisper是什麼啊→Kaspa上的隱私covenant, 什麼是Toccata→Kaspa主網hardfork升級版本, 誰是Ryan→Nami的人類夥伴工程師.",
+      "multi_turn_v2": "31/150 (20.7%) — second-best phase 10 (HYP44B 21.3% is top). Per-cat: A.Kaspa 20% (+6.7 vs HYP49), B.Whisper 6.7%, C.nami-lm 13.3% (+6.7), D.Identity 20% (+6.7), E.Relationship 40% (+6.7), F.Workflow 26.7% (+6.7), G.Soul 13.3%, H.Aqua 26.7% (+6.7), I.Toccata 20% (+6.7), J.Routine 20%."
     },
     "lessons": [
       "Paraphrase 1-turn dialogues at weight 5.0 successfully train variant→canonical mapping. The natural-Q coverage Ryan asked for (5/15 msg 3730) is functional. UX > metric.",
