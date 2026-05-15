@@ -351,7 +351,7 @@ def compute_bpb(loss, tokenizer, texts):
     return loss / math.log(2) / avg
 
 
-TIME_BUDGET = 240 * 60  # phase 10 HYP50: 180→240 min — HYP49 hit 180min budget at ep 20 only (corpus 1487→1793 = 21% slower per epoch). Buy back the 10 epochs HYP44B (30ep) had on the smaller corpus. Cosine target via max(20, time_budget/360) = 40 ep target — proportional to corpus growth.
+TIME_BUDGET = 240 * 60  # restored to HYP54 baseline after HYP55 REVERT. 300min wasn't enough for d_model 128 — finished at ep 14 vs ep 30 target. d_model 96 + 240min is the proven configuration.
 
 
 # Phase 0 persona probes — questions taken from synthesize_qa.py's
@@ -405,7 +405,7 @@ def train(epochs: int = 200, lr: float = 0.002,
     # experiment showed scaling up just under-fits at our compute
     # budget (Chinchilla math: more params without proportional
     # compute = worse). Phase 0 setup remains the floor.
-    d_model, d_ff, num_heads, num_layers = 96, 256, 6, 4  # HYP43: 3→4 depth, +210K params (~30%)
+    d_model, d_ff, num_heads, num_layers = 96, 256, 6, 4  # HYP54 baseline restored after HYP55 d_model 128 scale-up REVERTed (1.3M params undertrained at ~14 ep in 300min → bpb 0.50, strict 22 catastrophic). Lesson: at 16-core CPU, scaling d_model 96→128 needs 600min+ budget OR fewer params.
     model = GPTMini(
         vocab_size=tokenizer.vocab_size,
         d_model=d_model, d_ff=d_ff, num_heads=num_heads,
