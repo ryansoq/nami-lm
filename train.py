@@ -351,7 +351,7 @@ def compute_bpb(loss, tokenizer, texts):
     return loss / math.log(2) / avg
 
 
-TIME_BUDGET = 180 * 60  # phase 10 HYP43: 90→180 min — num_layers 3→4 adds ~30% params, needs more budget to converge (HYP35 d_model bump severely undertrained at 90min).
+TIME_BUDGET = 240 * 60  # phase 10 HYP50: 180→240 min — HYP49 hit 180min budget at ep 20 only (corpus 1487→1793 = 21% slower per epoch). Buy back the 10 epochs HYP44B (30ep) had on the smaller corpus. Cosine target via max(20, time_budget/360) = 40 ep target — proportional to corpus growth.
 
 
 # Phase 0 persona probes — questions taken from synthesize_qa.py's
