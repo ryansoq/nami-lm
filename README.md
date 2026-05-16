@@ -36,14 +36,14 @@ Current model (phase 10 v0.3.1.2-realigned baseline): **GPT-1 Mini**,
                   │   ids=[25,1834,92,...]   shape (T,)
                   │
         ┌─────────▼─────────┐
-        │  token_emb        │       Embedding(3779, 96)         363K params (54%)
+        │  token_emb        │       Embedding(4212, 96)         404K params (50%)
         │  + pos_emb        │     + learned positional (64, 96)   6K params  (1%)
         └─────────┬─────────┘
                   │   x : (T, 96)
                   │
         ╔═════════▼═════════╗
         ║   ┌───────────┐   ║       Pre-norm Transformer block
-        ║   │ LayerNorm │   ║       (×3 in baseline, ×4 in HYP43)
+        ║   │ LayerNorm │   ║       (×4 since HYP43 — depth lever KEEP)
         ║   └─────┬─────┘   ║
         ║   ┌─────▼─────┐   ║       MultiHeadAttention
         ║   │ MHA       │───╫──► residual  Wq Wk Wv Wo (96×96)   37K params/block
@@ -57,19 +57,19 @@ Current model (phase 10 v0.3.1.2-realigned baseline): **GPT-1 Mini**,
         ║   │ d_ff=256  │   ║       (Llama2-canonical, no bias)
         ║   └─────┬─────┘   ║       ───────────────
         ╚═════════│═════════╝       Per-block total: ~110K params (16%)
-                  │ ×N blocks       3 blocks total: ~330K (49%)
+                  │ ×4 blocks       4 blocks total: ~346K (43%)
                   │   x : (T, 96)
                   │
         ┌─────────▼─────────┐       Linear(96, 256) → GELU → Linear(256, 96)
-        │  MLP head         │       legacy GPT-1 transform           50K (7%)
+        │  MLP head         │       legacy GPT-1 transform           50K (6%)
         └─────────┬─────────┘       (Llama2 doesn't have this)
                   │   x : (T, 96)
                   │
         ┌─────────▼─────────┐       logits = x @ token_emb.weightᵀ
         │  Tied output proj │       weight-sharing with input embed
-        │  (no params!)     │       saves 363K params (HYP22 KEEP)
+        │  (no params!)     │       saves 404K params (HYP22 KEEP)
         └─────────┬─────────┘
-                  │   logits : (T, 3779)
+                  │   logits : (T, 4212)
                   │
         ┌─────────▼─────────┐
         │  argmax / softmax │
@@ -81,32 +81,72 @@ Current model (phase 10 v0.3.1.2-realigned baseline): **GPT-1 Mini**,
                 ...
 ```
 
-**Current config (phase 10 baseline):**
+**Current config (HYP57 v0.3.1.8-paraphrase-v3, 2026-05-16):**
 
 | knob | value | rationale |
 |---|---|---|
-| `d_model` | 96 | sweet spot vs 100KB corpus; HYP35 d=128 undertrained |
-| `num_heads` | 6 | head_dim = 16, autochat HYP11 |
-| `num_layers` | 3 (HYP43 testing 4) | depth lever; +13% params/block |
+| `d_model` | 96 | HYP55 d=128 scale-up REVERTed at 16-core CPU (1.3M params undertrained at 14 ep) |
+| `num_heads` | 6 | head_dim = 16 |
+| `num_layers` | **4** | HYP43 depth lever KEEP; +13% params over baseline 3-layer |
 | `d_ff` | 256 | SwiGLU FFN width; 2.67× d_model |
-| `vocab_size` | 3779 | WordTokenizer on current corpus snapshot |
+| `vocab_size` | **4212** | WordTokenizer on 2017-chunk corpus (HYP56 paraphrase v3 added) |
 | `max_seq_len` | 64 | median Q ≈ 24 tokens, max 85 truncated |
-| total params | **676K** | tied embed saves 363K (34%) |
-| optimizer | AdamW lr=0.002 wd=0.02 | wd ↓ vs Llama2 0.1 (small corpus) |
+| total params | **803K** | tied embed saves 404K (33%) |
+| optimizer | AdamW lr=0.002 wd=0.02 | wd ↓ vs Llama2 0.1 |
 | grad clip | max_norm=0.5 | small batch 8 needs aggressive clip |
+| LR schedule | cosine, target via `max(20, budget/360)` | HYP44B fix — old `budget/7` left lr flat |
+| training budget | 240 min @ `OMP_NUM_THREADS=4` | thread cap = LESS contention = 9× more iterations |
+| epochs reached | **281** | HYP57: 281 ep at 4-thread vs HYP54: 30 ep at 16-thread |
 
 **Param breakdown:**
 
 ```
-token_emb     ████████████████████████████████  363K  54%
-3 blocks      ███████████████████████████       330K  49%
-  (MHA  111K + SwiGLU  219K)
-mlp_head      ████                               50K   7%
+token_emb     ████████████████████████████████  404K  50%
+4 blocks      ████████████████████████████████  346K  43%
+  (MHA  111K + SwiGLU  235K)
+mlp_head      ████                               50K   6%
 pos_emb       ▌                                   6K   1%
-LN gains      ·                                 0.6K   0%
+LN gains      ·                                 0.7K   0%
                                               ────────────
-                                       Total:  676K (tied embed)
+                                       Total:  803K (tied embed)
 ```
+
+**Inference pipeline (web_chat.py wrappers around `_MODEL.generate()`):**
+
+```
+user input ─►  _normalize()                  Ryan/Nami zh-stt fix + space-strip (HYP45b)
+                + particle-tail-strip       啊嗎喔哦 stripped from query end (HYP45)
+              ─►  _MODEL.generate(           pinned tokenizer_vocab.json (vocab 4212)
+                    max_new=40, T=0.05)      top-1 sample, 40 tok max
+              ─►  _trim_answer()             cut at em-dash or sentence terminator
+                + _trim_degen()              HYP45 regex: char triple / word repeat / mid-?
+              ─►  TG / Web UI                ~5 sec per query
+```
+
+**HYP57 strong-axes vs phase 10 frontier:**
+
+| Axis | HYP44B (cosine fix) | HYP49 (corpus expand) | HYP57 (paraphrase v3 + thread cap) |
+|---|---|---|---|
+| Strict-eval (no degen) | 37/51 = 72.5% | 37/51 = 72.5% | **37/51 = 72.5%** ★ ties frontier |
+| Strong-eval (prefix) | 50/51 = 98.0% | 47/51 = 92.2% | **49/51 = 96.1%** |
+| Multi-turn turn pct | **21.3%** ★ | 16.7% | TBD (eval running) |
+| Single bpb | 0.0323 ★ | 0.0493 | **0.0429** |
+| Natural-Q variants live | 0 (canonical only) | 0 | **15+** (negation/out-of-domain/multi-hop/...) ★ |
+| Params | 762K | 796K | **803K** |
+| Total epochs trained | 30 | 22 | **281** ★ |
+
+The 9× extra epochs from `OMP_NUM_THREADS=4` (fewer thread contention overhead on 16-core CPU) is what made HYP57 possible without scaling params.
+
+**Why HYP57 is the best phase-10 model:**
+
+1. **Same architecture as HYP44B** (d_model 96 / 4 layers) — no scaling penalty
+2. **Cosine schedule fully decayed** (lr 0.002 → 0.00002) — late-stage fine-tuning that HYP44B's 30 epochs couldn't fully exploit
+3. **2017-chunk corpus** (HYP47/48/51/53/56 data work) — adds paraphrase + negation + out-of-domain coverage Ryan asked for
+4. **281 epochs** — each chunk seen ~9× more than HYP44B → variant→canonical mapping deeply baked
+5. **Web_chat trim guards** (HYP45/45b) — surface the gain by removing tail-degeneration noise
+
+Trade-off: strict eval drops temporarily during paraphrase additions
+(metric crowd-out), then recovers as more training cycles complete.
 
 For full forward-pass walkthrough with tensor shapes step-by-step:
 see [`ARCHITECTURE.md`](ARCHITECTURE.md) and learning-journal §10 at
