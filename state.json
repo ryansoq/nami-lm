@@ -32,7 +32,8 @@
     "eval_summary": {
       "single_turn_strict": "37/51 (72.5%) — Persona 3/5, Extended 8/10, Topic 12/16, Soul 14/20 BEST.",
       "single_turn_strong": "49/51 (96.1%) — Persona 5/5, Extended 10/10, Topic 15/16, Soul 19/20.",
-      "live_smoke": "HYP56 new variants 3/6 land: negation/out-of-domain/ownership work; time-awareness/memory-flow don't yet."
+      "live_smoke": "HYP56 new variants 3/6 land: negation/out-of-domain/ownership work; time-awareness/memory-flow don't yet.",
+      "multi_turn_v2": "28/150 (18.7%) — between HYP52 (20.7%) and HYP49 (16.7%), -2.6pp vs HYP44B frontier 21.3%. Per-cat: A.Kaspa 20%, B.Whisper 6.7%, C.nami-lm 13.3%, D.Identity 26.7% (BEST), E.Relationship 33.3%, F.Workflow 20%, G.Soul 13.3%, H.Aqua 26.7%, I.Toccata 6.7%, J.Routine 20%."
     },
     "lessons": [
       "OMP_NUM_THREADS=4 is FASTER on 16-core box than no-cap. Less thread contention overhead. 281 epochs in 240min vs HYP54's 30 epochs in 240min = 9x more iterations.",
