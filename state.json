@@ -19,6 +19,35 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp59": {
+    "phase": 10,
+    "hypothesis": "HYP59 — retrain on HYP58 corpus (2069 chunks, +20 deep multi-turn dialogues × 3-turn × 4 weak categories). Same arch + budget.",
+    "kept": false,
+    "verdict": "REVERT — strict 31/51 (-6pp vs HYP57 37, EXCEEDS 5pp absolute cap). Strong 48 (-1pp within cap). +20 dialogues at weight 5.0 crowded out single-turn anchors. Multi-turn not eval'd before revert. cp v0.3.1.8 back, tokenizer realigned via `git show 0175694:dialogues.py > dialogues.py` + regen + cp back (per feedback_no_git_checkout_for_temp_restore).",
+    "training_log": "/tmp/nami-lm-hyp59-*",
+    "epochs_reached": null,
+    "elapsed_s": null,
+    "final_bpb": 0.0445,
+    "params": 804672,
+    "eval_summary": {
+      "single_turn_strict": "31/51 (60.8%) — Persona 2/5, Extended 6/10, Topic 12/16, Soul 11/20.",
+      "single_turn_strong": "48/51 (94.1%) — Persona 5/5, Extended 10/10, Topic 15/16, Soul 17+1p/20.",
+      "multi_turn_v2": "skipped — single-turn regression triggers REVERT regardless"
+    },
+    "lessons": [
+      "+20 weighted (5.0) multi-turn dialogues crowded out single-turn anchors. Same pattern as HYP49/54 — dilution beats data add when capacity-bound.",
+      "Per-category Soul drop -3pp suggests deep multi-turn additions cannibalize own category Soul scoring (G.Soul 14→11).",
+      "Phase 10 at 800K params + ~145KB corpus has VERY little marginal capacity. Each retrain that adds weighted dialogues loses ~5pp strict somewhere.",
+      "Phase 11 path is confirmed: data work alone won't push past HYP57 frontier. Need params 1.2-1.5M to absorb HYP58's content, which requires 8+hr compute infeasible at current setup."
+    ]
+  },
+  "best_baseline_label_active": "v0.3.1.8-paraphrase-v3 (RESTORED after HYP59 REVERT, 803K params, vocab 4212, 2017 chunks, strict 37 / strong 49 / multi 18.7%, bpb 0.0429)",
+  "last_result_hyp58": {
+    "phase": 10,
+    "hypothesis": "HYP58 — +20 deep multi-turn dialogues for 4 weakest categories (B.Whisper/I.Toccata/C.nami-lm/G.Soul each got 5 × 3-turn dialogues).",
+    "kept": true,
+    "verdict": "KEEP-DATA — dialogues 268→288, turns 400→460 (+60), corpus 2017→2069 chunks (+3%), bytes 144→146KB, vocab 4212→4222."
+  },
   "last_result_hyp57": {
     "phase": 10,
     "hypothesis": "HYP57 — retrain on HYP56 paraphrase v3 corpus (2017 chunks). d_model 96 + 240min + OMP_NUM_THREADS=4 + renice +10.",
