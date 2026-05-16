@@ -19,6 +19,35 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp57": {
+    "phase": 10,
+    "hypothesis": "HYP57 — retrain on HYP56 paraphrase v3 corpus (2017 chunks). d_model 96 + 240min + OMP_NUM_THREADS=4 + renice +10.",
+    "kept": true,
+    "verdict": "KEEP-STRONG — all 3 axes lifted vs HYP54. Strict 33→37 (+4pp), strong 47→49 (+2pp), bpb 0.05ish→0.0429. Persona strict 2→3, Extended 6→8, Soul 12→14 (best ever). Topic 13→12 (-1 within noise). NEW negation/out-of-domain variants LAND (Nami是Aqua嗎→不是 / 今天天氣→拒答 / Aqua屬於誰→canonical). Some HYP56 deep variants still don't land (多久醒一次/會忘嗎). 4-thread cap was FASTER not slower (281 epochs in 240min vs HYP54's 30 — less thread contention overhead).",
+    "training_log": "/tmp/nami-lm-hyp57-1778889612.log",
+    "epochs_reached": 281,
+    "elapsed_s": 14442.5,
+    "final_bpb": 0.0429,
+    "params": 803712,
+    "eval_summary": {
+      "single_turn_strict": "37/51 (72.5%) — Persona 3/5, Extended 8/10, Topic 12/16, Soul 14/20 BEST.",
+      "single_turn_strong": "49/51 (96.1%) — Persona 5/5, Extended 10/10, Topic 15/16, Soul 19/20.",
+      "live_smoke": "HYP56 new variants 3/6 land: negation/out-of-domain/ownership work; time-awareness/memory-flow don't yet."
+    },
+    "lessons": [
+      "OMP_NUM_THREADS=4 is FASTER on 16-core box than no-cap. Less thread contention overhead. 281 epochs in 240min vs HYP54's 30 epochs in 240min = 9x more iterations.",
+      "More epochs at cosine-decayed lr 0.00002 doesn't overfit on in-distribution probes (bpb flat 0.043 from ep 40 → ep 281). Phase 9 §7.3 warning needs revision: at this corpus + paraphrase mix, extended training is safe.",
+      "Negation + out-of-domain paraphrases ARE learnable at 800K params with enough training. Earlier failures may have been undertrained.",
+      "Multi-hop ownership Qs (Aqua屬於誰→婕) work directly. Time-awareness Qs (多久醒一次) need more variants or different anchor structure."
+    ]
+  },
+  "best_baseline_label_active": "v0.3.1.8-paraphrase-v3-thread-cap (803K params, vocab 4212, 2017 chunks, 281 epochs, strict 37 / strong 49 / bpb 0.0429)",
+  "last_result_hyp56": {
+    "phase": 10,
+    "hypothesis": "HYP56 — paraphrase v3 (+63 variants across 6 concept groups: negation/multi-hop/Toccata/out-of-domain/time-memory/Soul).",
+    "kept": true,
+    "verdict": "KEEP-DATA — corpus 1957→2017 chunks (+3%), bytes 141→144KB, vocab 4193→4212. Pure data; HYP57 retrains on this."
+  },
   "last_result_hyp55": {
     "phase": 10,
     "hypothesis": "HYP55 — scale up: d_model 96→128, d_ff 256→384, heads 6→8. params 802K→1.30M (+62%). TIME_BUDGET 300min.",
