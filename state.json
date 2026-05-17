@@ -19,6 +19,29 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp61": {
+    "phase": 10,
+    "hypothesis": "HYP61 — cosine LR floor 0.1%→0.01% (another decade lower). Test compound vs HYP60's +1pp.",
+    "kept": true,
+    "verdict": "KEEP-STRONG — ★★ NEW PHASE 10 STRICT HIGH AGAIN at 39/51 (+1 vs HYP60 38). Strong 49 same. Topic 12→13 (+1). Persona/Extended/Soul same. Compound works — 2 decades of cosine floor lowering each gave +1pp strict. From HYP57's 37 baseline, HYP60+HYP61 added +2pp by lowering floor 100×. Multi-turn eval running bg.",
+    "training_log": "/tmp/nami-lm-hyp61-*",
+    "epochs_reached": null,
+    "elapsed_s": null,
+    "final_bpb": null,
+    "params": 803712,
+    "eval_summary": {
+      "single_turn_strict": "39/51 (76.5%) ★★ NEW HIGH — Persona 2/5, Extended 9/10, Topic 13/16 (+1), Soul 15/20.",
+      "single_turn_strong": "49/51 (96.1%) — Persona 5/5, Extended 10/10, Topic 15/16, Soul 19/20.",
+      "multi_turn_v2": "running in background"
+    },
+    "lessons": [
+      "Cosine floor decade lowering COMPOUNDS at this scale. Each 10× lower → +1pp strict. HYP60 (0.001) +1; HYP61 (0.0001) +1 more.",
+      "Phase 10 ceiling kept moving every time we test the assumption. From HYP44B 'capacity bound at 37' to HYP60/61 'just schedule bound'.",
+      "HYP62 candidate: another decade (0.00001). Or stop here and explore other levers (label smoothing, dropout) since multiplicative-decade lowering may hit floating-point precision floor."
+    ]
+  },
+  "best_baseline_label_active": "v0.3.2.0-cosine-floor-deeper (803K params, vocab 4212, corpus 2017, strict 39 ★★ NEW HIGH / strong 49)",
+  "phase10_frontier": "v0.3.2.0-cosine-floor-deeper (HYP61) — 2nd frontier-beat in 2 HYPs",
   "last_result_hyp60": {
     "phase": 10,
     "hypothesis": "HYP60 — cosine LR floor 1%→0.1% peak. 1-line on top of HYP57 baseline.",
