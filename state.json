@@ -32,7 +32,7 @@
     "eval_summary": {
       "single_turn_strict": "38/51 (74.5%) ★ NEW HIGH — Persona 2/5, Extended 9/10 BEST, Topic 12/16, Soul 15/20 BEST.",
       "single_turn_strong": "49/51 (96.1%) — Persona 5/5, Extended 10/10, Topic 15/16, Soul 19/20.",
-      "multi_turn_v2": "running in background"
+      "multi_turn_v2": "30/150 (20.0%) — 3rd best phase 10 (HYP44B 21.3% top, HYP52 20.7%). +1.3pp vs HYP57 18.7%. Per-cat: H.Aqua 33.3% (NEW BEST), G.Soul 26.7% (+13.3 vs HYP57), D.Identity 26.7%, E.Relationship 33.3%, A.Kaspa 20%, F.Workflow 20%, B.Whisper 6.7%, C.nami-lm 13.3%, I.Toccata 6.7%, J.Routine 13.3%."
     },
     "lessons": [
       "1-line cosine floor change (max(lr, lr*0.01)→max(lr, lr*0.001)) gave +1pp strict. Even at converged plateau, deeper decay produced marginal-but-real gain.",
