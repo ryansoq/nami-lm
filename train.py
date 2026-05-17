@@ -461,7 +461,7 @@ def train(epochs: int = 200, lr: float = 0.002,
                 (epoch - warmup_epochs) / max(expected_epochs - warmup_epochs, 1),
                 1.0)
             cur_lr = lr * 0.5 * (1 + np.cos(np.pi * progress))
-        cur_lr = max(cur_lr, lr * 0.01)
+        cur_lr = max(cur_lr, lr * 0.001)  # HYP60: floor 0.01→0.001 (10x lower) — HYP57 bpb plateaued at lr=0.00002 for 250+ epochs; lower floor lets cosine continue descending past convergence point, giving very-late fine-tuning more iterations near zero lr.
         opt.lr = cur_lr
 
         total_loss = 0.0

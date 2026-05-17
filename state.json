@@ -19,6 +19,29 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp60": {
+    "phase": 10,
+    "hypothesis": "HYP60 — cosine LR floor 1%→0.1% peak. 1-line on top of HYP57 baseline.",
+    "kept": true,
+    "verdict": "KEEP-STRONG — **NEW PHASE 10 STRICT HIGH at 38/51 (+1 vs HYP57 37)**. Strong 49 (same). Extended 9/10 (+1 BEST), Soul 15/20 (+1 BEST), Topic 12 (same), Persona 2 (-1 minor). Cosine floor decade lower (0.00002→0.000002) gave model another ~10pp lr decay at very-late stage, model squeezed last bit of fine-tune. ★ First phase 10 model to BEAT HYP44B-era strict 37 line.",
+    "training_log": "/tmp/nami-lm-hyp60-*",
+    "epochs_reached": null,
+    "elapsed_s": null,
+    "final_bpb": null,
+    "params": 803712,
+    "eval_summary": {
+      "single_turn_strict": "38/51 (74.5%) ★ NEW HIGH — Persona 2/5, Extended 9/10 BEST, Topic 12/16, Soul 15/20 BEST.",
+      "single_turn_strong": "49/51 (96.1%) — Persona 5/5, Extended 10/10, Topic 15/16, Soul 19/20.",
+      "multi_turn_v2": "running in background"
+    },
+    "lessons": [
+      "1-line cosine floor change (max(lr, lr*0.01)→max(lr, lr*0.001)) gave +1pp strict. Even at converged plateau, deeper decay produced marginal-but-real gain.",
+      "Same arch + same corpus + same budget + 1 lever change = first frontier-beat since HYP44B cosine fix. Single-axis levers can compound.",
+      "Phase 10 ceiling slightly higher than thought: strict 37 was a soft ceiling, real one is 38+ with careful schedule tuning."
+    ]
+  },
+  "best_baseline_label_active": "v0.3.1.9-cosine-floor (803K params, vocab 4212, corpus 2017, strict 38 ★ NEW HIGH / strong 49)",
+  "phase10_frontier": "v0.3.1.9-cosine-floor (HYP60) — first frontier-beat since HYP44B",
   "last_result_hyp59": {
     "phase": 10,
     "hypothesis": "HYP59 — retrain on HYP58 corpus (2069 chunks, +20 deep multi-turn dialogues × 3-turn × 4 weak categories). Same arch + budget.",
