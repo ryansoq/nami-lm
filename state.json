@@ -19,6 +19,28 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp62": {
+    "phase": 10,
+    "hypothesis": "HYP62 — cosine LR floor 0.01%→0.001% (3rd decade). Test if compound continues.",
+    "kept": false,
+    "verdict": "REVERT-PLATEAU — eval IDENTICAL to HYP61. Strict 39, strong 49, all per-cat same. 3rd decade hit FP precision floor (lr = 2e-8 is below numpy float32 effective precision for accumulator). Cosine floor lever is exhausted; 2 decades (HYP60+61) was the limit. Restored HYP61 baseline weights since eval same but HYP61 has cleaner config. Lesson: compound levers eventually hit physical/precision limits.",
+    "training_log": "/tmp/nami-lm-hyp62-*",
+    "epochs_reached": 270,
+    "elapsed_s": 14446.8,
+    "final_bpb": 0.0428,
+    "params": 803712,
+    "eval_summary": {
+      "single_turn_strict": "39/51 (76.5%) — same as HYP61",
+      "single_turn_strong": "49/51 (96.1%) — same as HYP61"
+    },
+    "lessons": [
+      "3 decades of cosine floor lower exhausts the lever. lr=2e-8 = below FP precision for AdamW accumulator. No incremental gain.",
+      "Compound levers (HYP60→61→62) follow: +1pp, +1pp, +0pp. Plateaus at physical/precision limit not learning limit.",
+      "Phase 10 final ceiling: strict 39 (HYP60+61) / strong 49-50 / multi 20-21% / bpb 0.04. v0.3.2.0-cosine-floor-deeper is the canonical phase 10 baseline.",
+      "Next levers (HYP63+) must come from different family: dropout, label smoothing, RoPE, BPE tokenizer, or phase 11 corpus scale."
+    ]
+  },
+  "phase10_final_ceiling": "strict 39 / strong 49 / multi 21% / bpb 0.04 — HYP60+61 cosine floor lever exhausted at FP precision",
   "last_result_hyp61": {
     "phase": 10,
     "hypothesis": "HYP61 — cosine LR floor 0.1%→0.01% (another decade lower). Test compound vs HYP60's +1pp.",
