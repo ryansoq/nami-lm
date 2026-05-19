@@ -426,7 +426,7 @@ def train(epochs: int = 200, lr: float = 0.002,
                  for ids, w in encoded_w if len(ids) >= 2]
 
     # Length-bucket batches (autochat HYP5). Each bucket holds (ids, w).
-    BATCH_SIZE = 16  # HYP66: 8→16 — phase 10 cosine/wd/layers levers all exhausted. Larger batch = ~2× faster per epoch + cleaner gradient signal. Llama2 uses 4M tokens per batch (8 here is tiny). Predict: ~240 ep in 240min budget (vs HYP65 120 ep), strict ≥39.
+    BATCH_SIZE = 4  # HYP67: 8→4 (DOWN, reverse direction from HYP66). HYP66 batch 16 → strict 34 (-5). At 803K params / 143KB corpus, smaller batch = more stochastic regularization, finer minima. Predict ~480 ep (2× more), strict ≥40 (recover HYP61 + maybe push).
     length_buckets: dict[int, list[tuple[list[int], float]]] = {}
     for ids, w in encoded_w:
         length_buckets.setdefault(len(ids), []).append((ids, w))
