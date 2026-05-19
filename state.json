@@ -15,10 +15,19 @@
   "best_bpb_phase7_commit": "pending HYP16 commit",
   "best_eval_total": "36/41 (5/5 + 10/10 + 14/16 + 7/10)",
   "best_eval_total_commit": "pending HYP16 commit",
-  "current_pid": 1485916,
-  "current_started": "2026-05-19T09:08:00+08:00",
-  "current_hypothesis": "phase 10 HYP63 — weight_decay 0.02→0.05 (2.5× stronger regularization, halfway to Llama2's 0.1). Cosine floor lever exhausted at HYP61/62; trying different lever family. Predict: bpb slightly up (more regularization), strict ≥ 38 (hold or slight), multi-turn ≥ 21% (regularization should help generalization).",
-  "current_log": "/tmp/nami-lm-hyp63-*",
+  "current_pid": 1485937,
+  "current_started": "2026-05-19T10:33:00+08:00",
+  "current_hypothesis": "phase 10 HYP64 — weight_decay 0.02→0.03 (softer than HYP63's 0.05 which gave bpb 0.0434 vs baseline ~0.04, +8% degraded, no eval reached). 50% bump vs 150% bump. If still degrades, wd lever is wrong family for this scale.",
+  "current_log": "/tmp/nami-lm-hyp64-*",
+  "last_result_hyp63": {
+    "verdict": "REVERT (incomplete)",
+    "epochs": 100,
+    "bpb_final": 0.0434,
+    "vs_baseline": "+8% degraded (HYP61 ~0.04)",
+    "lever": "weight_decay 0.02→0.05",
+    "note": "killed before eval; wd 0.05 over-regularized memorization. Try softer 0.03 as HYP64.",
+    "commit": "9752a8d"
+  },
   "last_result_hyp62": {
     "phase": 10,
     "hypothesis": "HYP62 — cosine LR floor 0.01%→0.001% (3rd decade). Test if compound continues.",

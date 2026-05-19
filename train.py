@@ -405,7 +405,7 @@ def train(epochs: int = 200, lr: float = 0.002,
     # experiment showed scaling up just under-fits at our compute
     # budget (Chinchilla math: more params without proportional
     # compute = worse). Phase 0 setup remains the floor.
-    d_model, d_ff, num_heads, num_layers = 96, 256, 6, 4  # HYP54 baseline restored after HYP55 d_model 128 scale-up REVERTed (1.3M params undertrained at ~14 ep in 300min → bpb 0.50, strict 22 catastrophic). Lesson: at 16-core CPU, scaling d_model 96→128 needs 600min+ budget OR fewer params.
+    d_model, d_ff, num_heads, num_layers = 96, 256, 6, 5  # HYP65: 4→5 layers (~913K params, +14% vs HYP61's 803K). HYP43 proved 3→4 works (+1 layer = strict +5pp). Architecture lever after wd lever exhausted (HYP63/64 both REVERT). Predict: ~100 epochs in 240min budget, strict ≥40.
     model = GPTMini(
         vocab_size=tokenizer.vocab_size,
         d_model=d_model, d_ff=d_ff, num_heads=num_heads,
@@ -419,7 +419,7 @@ def train(epochs: int = 200, lr: float = 0.002,
         / max(sum(len(ids) for ids in encoded), 1)
     print(f"📐 avg_bytes/token = {avg_bpt:.2f}")
 
-    opt = AdamW(model.parameters(), lr=lr, weight_decay=0.03)  # HYP64: 0.02→0.03 — softer than HYP63's 0.05 (bpb +8% degraded). Test minimal regularization bump; if still degrades, wd is wrong lever family at this scale.
+    opt = AdamW(model.parameters(), lr=lr, weight_decay=0.02)  # HYP64 REVERT — wd 0.03→0.02 restore; weight_decay lever proven wrong family (HYP63 0.05 +8% bpb degraded, HYP64 0.03 strict 35 = -4 from HYP61's 39).
 
     # Truncate sequences over max_seq_len, keep weights aligned (HYP30)
     encoded_w = [(ids[:max_seq_len], w)
