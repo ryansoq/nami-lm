@@ -419,7 +419,7 @@ def train(epochs: int = 200, lr: float = 0.002,
         / max(sum(len(ids) for ids in encoded), 1)
     print(f"📐 avg_bytes/token = {avg_bpt:.2f}")
 
-    opt = AdamW(model.parameters(), lr=lr, weight_decay=0.02)
+    opt = AdamW(model.parameters(), lr=lr, weight_decay=0.03)  # HYP64: 0.02→0.03 — softer than HYP63's 0.05 (bpb +8% degraded). Test minimal regularization bump; if still degrades, wd is wrong lever family at this scale.
 
     # Truncate sequences over max_seq_len, keep weights aligned (HYP30)
     encoded_w = [(ids[:max_seq_len], w)
