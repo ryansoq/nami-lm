@@ -405,7 +405,7 @@ def train(epochs: int = 200, lr: float = 0.002,
     # experiment showed scaling up just under-fits at our compute
     # budget (Chinchilla math: more params without proportional
     # compute = worse). Phase 0 setup remains the floor.
-    d_model, d_ff, num_heads, num_layers = 96, 256, 6, 5  # HYP65: 4→5 layers (~913K params, +14% vs HYP61's 803K). HYP43 proved 3→4 works (+1 layer = strict +5pp). Architecture lever after wd lever exhausted (HYP63/64 both REVERT). Predict: ~100 epochs in 240min budget, strict ≥40.
+    d_model, d_ff, num_heads, num_layers = 96, 256, 6, 4  # HYP65 REVERT — 5 layers strict 33 = -6 from HYP61's 39 (undertrained at 120 ep budget, HYP55 lesson repeats). Back to 4. Architecture-up lever exhausted alongside cosine floor & weight decay.
     model = GPTMini(
         vocab_size=tokenizer.vocab_size,
         d_model=d_model, d_ff=d_ff, num_heads=num_heads,
@@ -426,7 +426,7 @@ def train(epochs: int = 200, lr: float = 0.002,
                  for ids, w in encoded_w if len(ids) >= 2]
 
     # Length-bucket batches (autochat HYP5). Each bucket holds (ids, w).
-    BATCH_SIZE = 8
+    BATCH_SIZE = 16  # HYP66: 8→16 — phase 10 cosine/wd/layers levers all exhausted. Larger batch = ~2× faster per epoch + cleaner gradient signal. Llama2 uses 4M tokens per batch (8 here is tiny). Predict: ~240 ep in 240min budget (vs HYP65 120 ep), strict ≥39.
     length_buckets: dict[int, list[tuple[list[int], float]]] = {}
     for ids, w in encoded_w:
         length_buckets.setdefault(len(ids), []).append((ids, w))
