@@ -351,7 +351,7 @@ def compute_bpb(loss, tokenizer, texts):
     return loss / math.log(2) / avg
 
 
-TIME_BUDGET = 240 * 60  # restored to HYP54 baseline after HYP55 REVERT. 300min wasn't enough for d_model 128 — finished at ep 14 vs ep 30 target. d_model 96 + 240min is the proven configuration.
+TIME_BUDGET = 360 * 60  # HYP69 — phase 11 corpus (+94 chunks, +6% bytes, +72 vocab) needs more compute to train new embeddings without diluting persona signal. HYP68 at 240min gave strict 33 (-6 from baseline). Try 360min (50% more) to see if persona recovers.
 
 
 # Phase 0 persona probes — questions taken from synthesize_qa.py's
