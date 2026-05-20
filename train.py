@@ -351,7 +351,7 @@ def compute_bpb(loss, tokenizer, texts):
     return loss / math.log(2) / avg
 
 
-TIME_BUDGET = 360 * 60  # HYP69 — phase 11 corpus (+94 chunks, +6% bytes, +72 vocab) needs more compute to train new embeddings without diluting persona signal. HYP68 at 240min gave strict 33 (-6 from baseline). Try 360min (50% more) to see if persona recovers.
+TIME_BUDGET = 240 * 60  # HYP70 — back to 240 after HYP69 confirmed extra time idle once cosine ends at ep 60. Phase 11 lever now is corpus selection, not compute.
 
 
 # Phase 0 persona probes — questions taken from synthesize_qa.py's

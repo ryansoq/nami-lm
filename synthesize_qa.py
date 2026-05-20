@@ -204,8 +204,14 @@ def main():
     ]
     # All topics (phase 2: include book chapters — they have lots of
     # well-structured Q&A material in the form of "**term:** definition")
+    # Phase 11 HYP70: skip leetcode-*.md — they are pure C++ syntax reference,
+    # not Nami-domain knowledge. Adding them (4212→4284 vocab) caused persona
+    # dilution in HYP68/69 (strict -6 then recovered partial to -2).
+    PHASE11_EXCLUDE = {"leetcode-stl-cheatsheet.md", "leetcode-cpp-cheatsheet.md"}
     topics_dir = CLAWD / "memory" / "topics"
     for f in sorted(topics_dir.glob("*.md")):
+        if f.name in PHASE11_EXCLUDE:
+            continue
         sources.append(f)
     # Recent daily notes (phase 2: ~30 days adds rich daily context)
     memory_dir = CLAWD / "memory"
