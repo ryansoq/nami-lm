@@ -793,3 +793,74 @@ Open questions for phase 11:
 - Should we try BPE tokenizer (HYP1 deferred) — better with 144KB?
 - d_model 128 with 600min budget worth one more try?
 - Synthetic dialogues from Claude (phase 8 deferred) — 100+ multi-turns
+
+---
+
+## Reflection — HYP62-71 (phase 10 close + phase 11 open) [2026-05-21]
+
+### Phase 10 final verdict: ceiling locked at strict 39 (HYP61)
+
+After HYP60/61 broke the strict-37 ceiling to 39 via cosine floor 0.0001,
+**five more scale-direction levers were tried and ALL reverted**:
+
+| HYP | lever | result | verdict |
+|-----|-------|--------|---------|
+| 62 | cosine floor 0.0001→0.00001 | lr hit FP32 floor (2e-8), eval identical | REVERT |
+| 63 | weight_decay 0.02→0.05 | bpb +8%, no eval reached | REVERT |
+| 64 | weight_decay 0.02→0.03 | strict 35 (-4) | REVERT |
+| 65 | num_layers 4→5 | strict 33 (-6), undertrained 120ep | REVERT |
+| 66 | BATCH_SIZE 8→16 | strict 34 (-5), persona collapse | REVERT |
+| 67 | BATCH_SIZE 8→4 | strict 36 (-3), stochastic noise | REVERT |
+
+**Lesson: at 810K params / 143KB corpus, HYP61's config (4-layer, batch 8,
+wd 0.02, cosine floor 0.0001, 240min) is a hard local optimum. Every
+"scale" direction — up OR down — regresses.** This is the 3rd confirmation
+of "1-line lever > scale-up" (after HYP44B cosine fix, HYP60 cosine floor).
+
+### Phase 11 open: corpus expansion + the cosine-length discovery
+
+HYP68-71 tackled corpus expansion (143→152KB, +interview §10-13 + clarity):
+
+| HYP | corpus | cosine-ep | budget | strict | note |
+|-----|--------|-----------|--------|--------|------|
+| 68 | full +6% | 40 | 240min | 33 | first try, regressed |
+| 69 | full +6% | 60 | 360min | 37 | more time helped |
+| 70 | filtered | 40 | 240min | 33 | filter didn't help |
+| 71 | filtered | 60 | 240min | **38** | **KEEP — phase 11 baseline** |
+
+**THE KEY DISCOVERY: cosine schedule LENGTH is an independent lever from
+compute budget.** HYP69's +4 over HYP68 wasn't "50% more time" — it was the
+cosine decaying over 60 epochs instead of 40 (more of the schedule spent at
+useful mid-range LR). HYP71 proved it: same filtered corpus as HYP70, just
+`expected_epochs` divisor 360→240 (→ 60-ep cosine), and strict jumped 33→38
+on IDENTICAL wall-clock (240min). The extra HYP69 time was mostly idle at
+lr=0.
+
+**Mechanism**: `expected_epochs = max(20, int(time_budget / 240))` sets the
+cosine denominator. Bigger denominator divisor = shorter cosine = LR hits
+floor too early = model stops learning while compute remains. Decoupling
+cosine length from wall-clock budget is now a first-class knob.
+
+### Operational lessons this batch
+
+- **Verify old PID dead before launch** (HYP65/66 race, 5/19): a zombie
+  5-layer trainer ran 30min concurrent with the new run, cross-contaminating
+  model_weights.json. `pgrep -fa python.*train.py` before every nohup now.
+  Written to memory `feedback_verify_old_pid_dead.md`.
+- **Real PID ≠ pgrep first hit**: `pgrep -f "python.*train.py"` matches the
+  bash wrapper's own command line. Use `ps -ef | grep python3.*train.py` to
+  get the actual interpreter PID for renice.
+- **leetcode-*.md barely contribute corpus**: filtering 2 large syntax-table
+  files only removed 13 chunks / 203 bytes. synthesize_qa.py extracts almost
+  nothing from pure reference tables (no Q&A structure). Filter was a no-op
+  for size but the experiment isolated the cosine-length variable.
+
+### Phase 11 next: the deferred Chinchilla scaling test (HYP72)
+
+Both HYP55 (d_model 128) and HYP65 (5-layer) reverted because they were
+**undertrained at fixed 240min budget**. The journal's standing open
+question — "d_model 128 with 600min budget worth one more try?" — is now the
+right experiment: scale params AND compute together (Chinchilla). If it
+breaks strict 39 → phase 11 real unlock. If not → 810K/4-layer is genuinely
+optimal for this corpus and we pivot to corpus QUALITY (synthetic multi-turn
+dialogues from Claude) instead of quantity.
