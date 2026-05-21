@@ -351,7 +351,7 @@ def compute_bpb(loss, tokenizer, texts):
     return loss / math.log(2) / avg
 
 
-TIME_BUDGET = 240 * 60  # HYP70 — back to 240 after HYP69 confirmed extra time idle once cosine ends at ep 60. Phase 11 lever now is corpus selection, not compute.
+TIME_BUDGET = 600 * 60  # HYP72 — Chinchilla scaling: d_model 128 (~1.5M params) needs proportional compute. HYP55 d128 failed at 240min (ep 14). 600min should give ~150 ep. expected_epochs = 600*60/240 = 150-ep cosine.
 
 
 # Phase 0 persona probes — questions taken from synthesize_qa.py's
@@ -405,7 +405,7 @@ def train(epochs: int = 200, lr: float = 0.002,
     # experiment showed scaling up just under-fits at our compute
     # budget (Chinchilla math: more params without proportional
     # compute = worse). Phase 0 setup remains the floor.
-    d_model, d_ff, num_heads, num_layers = 96, 256, 6, 4  # HYP65 REVERT — 5 layers strict 33 = -6 from HYP61's 39 (undertrained at 120 ep budget, HYP55 lesson repeats). Back to 4. Architecture-up lever exhausted alongside cosine floor & weight decay.
+    d_model, d_ff, num_heads, num_layers = 128, 384, 8, 4  # HYP72 — Chinchilla scaling test. HYP55 (d128) + HYP65 (5-layer) reverted from UNDERtraining at 240min. Now scale params AND compute together: d_model 96→128, d_ff 256→384, heads 6→8 (~1.5M params) + TIME_BUDGET 600min. Tests if 810K/4-layer ceiling is capacity-bound or compute-bound. Filtered corpus.
     model = GPTMini(
         vocab_size=tokenizer.vocab_size,
         d_model=d_model, d_ff=d_ff, num_heads=num_heads,
