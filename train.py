@@ -449,7 +449,7 @@ def train(epochs: int = 200, lr: float = 0.002,
     # → ~30 ep target. cosine actually decays late epochs to lr*0.5*(1+cos(π))
     # = 0 (clamped to lr*0.01). Matches Llama-style cosine to 10% of peak.
     expected_epochs = (
-        min(epochs, max(20, int(time_budget / 360))) if time_budget else epochs)
+        min(epochs, max(20, int(time_budget / 240))) if time_budget else epochs)  # HYP71: 360→240 divisor extends cosine schedule. 240min budget → 60 ep cosine (was 40). HYP69 confirmed cosine length is the lever (+4 strict 33→37). Decouples cosine from budget.
 
     avg_loss = float("inf")
     epoch = 0
