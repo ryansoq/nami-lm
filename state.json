@@ -15,10 +15,18 @@
   "best_bpb_phase7_commit": "pending HYP16 commit",
   "best_eval_total": "36/41 (5/5 + 10/10 + 14/16 + 7/10)",
   "best_eval_total_commit": "pending HYP16 commit",
-  "current_pid": 1600621,
-  "current_started": "2026-05-21T16:25:00+08:00",
-  "current_hypothesis": "phase 11 HYP72 — Chinchilla scaling test. d_model 96→128, d_ff 256→384, heads 6→8 (1.31M params, +62%) + TIME_BUDGET 240→600min (the budget HYP55 lacked). expected_epochs = 600*60/240 = 150-ep cosine. Tests if phase 10/11 ceiling is capacity-bound vs compute-bound. Filtered corpus. Predict: strict >39 if Chinchilla holds (scale params+compute together), ≤38 if 810K is genuinely optimal → then pivot to corpus quality.",
-  "current_log": "/tmp/nami-lm-hyp72-*",
+  "current_pid": 1611327,
+  "current_started": "2026-05-21T21:32:00+08:00",
+  "current_hypothesis": "phase 11 HYP73 — Chinchilla scaling test, FIXED. d_model 128 / d_ff 384 / heads 8 (1.31M params) + 600min + ADAPTIVE cosine. HYP72 was flawed: 150-ep cosine ended at ep 150 (31% of run) → bpb plateaued 0.0422 then idle 5h at lr=0. HYP73 adds adaptive recompute: measures sec/epoch after warmup, sets expected_epochs to span 92% of budget (~440 ep for d128). Now d128 gets a TRUE proportional cosine schedule. Predict: strict >39 if capacity+proper-schedule breaks ceiling; ≤38 confirms corpus-quality is the real lever.",
+  "current_log": "/tmp/nami-lm-hyp73-*",
+  "last_result_hyp72": {
+    "verdict": "KILLED (design flaw, no eval)",
+    "epochs_at_kill": 240,
+    "bpb_at_kill": 0.0422,
+    "lever": "d_model 128 + 600min, FIXED cosine divisor 240",
+    "note": "Cosine (150-ep) ended at ep 150, bpb plateaued 0.0422 (vs HYP71 d96 0.0428 — marginal), then 5h idle at lr=0. Killed at ep 240 to stop CPU waste (Ryan frugality directive) + fix cosine-budget mismatch. d128 only got 150-ep effective training, not a fair capacity test. Relaunched as HYP73 with adaptive cosine.",
+    "commit": "pending"
+  },
   "phase11_baseline_active": "v0.3.3.0-phase11-corpus (HYP71): strict 38, any-hit 49, bpb 0.0428. Filtered corpus (2098 chunks, no leetcode) + 60-ep cosine. Deployed in web_chat. Within TCR band (38 ≥ 34). Carries interview §10-13 + clarity knowledge that HYP61 lacked.",
   "last_result_hyp71": {
     "verdict": "KEEP (phase 11 baseline)",

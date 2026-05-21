@@ -449,7 +449,8 @@ def train(epochs: int = 200, lr: float = 0.002,
     # → ~30 ep target. cosine actually decays late epochs to lr*0.5*(1+cos(π))
     # = 0 (clamped to lr*0.01). Matches Llama-style cosine to 10% of peak.
     expected_epochs = (
-        min(epochs, max(20, int(time_budget / 240))) if time_budget else epochs)  # HYP71: 360→240 divisor extends cosine schedule. 240min budget → 60 ep cosine (was 40). HYP69 confirmed cosine length is the lever (+4 strict 33→37). Decouples cosine from budget.
+        min(epochs, max(20, int(time_budget / 240))) if time_budget else epochs)  # HYP71: 360→240 divisor extends cosine schedule. Initial estimate; HYP73 adaptive recompute below refines it from measured sec/epoch.
+    _cosine_recomputed = False  # HYP73: recompute expected_epochs once after warmup
 
     avg_loss = float("inf")
     epoch = 0
@@ -490,6 +491,18 @@ def train(epochs: int = 200, lr: float = 0.002,
                 n_seqs += len(batch)
 
         avg_loss = total_loss / max(n_seqs, 1)
+
+        # HYP73: adaptive cosine. After warmup + a couple epochs, measure
+        # real sec/epoch and recompute expected_epochs so the cosine schedule
+        # spans ~92% of the budget regardless of model size. Fixes HYP72 flaw
+        # (150-ep cosine on 600min budget → idle at lr=0 after ep 150 for ~5h).
+        if (time_budget and not _cosine_recomputed
+                and epoch == warmup_epochs + 2):
+            sec_per_epoch = (time.time() - start) / (epoch + 1)
+            expected_epochs = max(20, int(time_budget * 0.92 / sec_per_epoch))
+            _cosine_recomputed = True
+            print(f"  📐 adaptive cosine: ~{sec_per_epoch:.0f}s/ep → "
+                  f"expected_epochs={expected_epochs}")
 
         if epoch % 10 == 0 or epoch == epochs - 1:
             bpb = avg_loss / math.log(2) / avg_bpt
