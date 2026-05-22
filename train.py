@@ -240,13 +240,34 @@ class GPTMini(Module):
         logits = x @ self.token_emb.weight.transpose(1, 0)
         return logits.reshape(T, self.vocab_size) if single else logits
 
-    def generate(self, token_ids, max_new=50, temperature=0.1):
+    def generate(self, token_ids, max_new=50, temperature=0.1,
+                 rep_penalty=None, rep_window=12):
+        """HYP77: optional repetition penalty (inference-side lever).
+
+        Greedy argmax loops easily at this scale ("Nami的AI夥伴跟Nami跟跟Nami")
+        — exactly the degeneracy the strict eval penalizes. A CTRL-style
+        repetition penalty divides the logit of any token seen in the last
+        `rep_window` generated positions by `rep_penalty` (>1 discourages
+        re-picking), applied BEFORE argmax. rep_penalty=None/1.0 → original
+        behaviour. Tunable via NAMI_REP_PENALTY env so eval/web_chat share it.
+        """
+        if rep_penalty is None:
+            rep_penalty = float(os.environ.get("NAMI_REP_PENALTY", "1.0"))
         ids = list(token_ids)
+        n_prompt = len(ids)
         for _ in range(max_new):
             if len(ids) >= self.max_seq_len:
                 break
             logits = self.forward(ids).data
             next_logits = logits[-1] / max(temperature, 1e-8)
+            if rep_penalty and rep_penalty != 1.0:
+                # penalise tokens generated in the recent window (not prompt)
+                recent = ids[max(n_prompt, len(ids) - rep_window):]
+                for t in set(recent):
+                    if next_logits[t] > 0:
+                        next_logits[t] /= rep_penalty
+                    else:
+                        next_logits[t] *= rep_penalty
             e = np.exp(next_logits - next_logits.max())
             probs = e / e.sum()
             ids.append(int(np.argmax(probs)))
