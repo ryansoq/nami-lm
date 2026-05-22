@@ -864,3 +864,51 @@ right experiment: scale params AND compute together (Chinchilla). If it
 breaks strict 39 → phase 11 real unlock. If not → 810K/4-layer is genuinely
 optimal for this corpus and we pivot to corpus QUALITY (synthetic multi-turn
 dialogues from Claude) instead of quantity.
+
+---
+
+## ⭐ Reflection — HYP77: the strict-39 ceiling was a DECODING bug [2026-05-23]
+
+**The single most important nami-lm result.** For ~35 HYPs across phase 10
+(scale d_model/layers, cosine floor, weight decay, batch size) and phase 11
+(corpus quantity, corpus quality paraphrases, d128 Chinchilla, cosine length)
+the strict-eval metric refused to pass 39/51. Every "scale the model / grow
+the corpus" lever either plateaued or regressed. We concluded the ceiling was
+"architecture-bound at 810K/4-layer/152KB."
+
+**It wasn't.** HYP77 added a CTRL-style repetition penalty to `generate()`
+(divide the logit of any token seen in the last `rep_window` positions by
+`rep_penalty` before argmax). On the SAME d96 weights:
+
+| rep_penalty | strict | any-hit |
+|-------------|--------|---------|
+| 1.0 (greedy argmax) | 33 | 48 |
+| **1.3** | **41** | 48 |
+| 1.5 | 41 | 48 |
+
++8 strict from a 15-line decoder change, no retrain.
+
+**Why the metric lied for so long**: the model KNEW the answers the whole time
+— any-hit (does the right keyword appear) sat at 48-50 across nearly every HYP.
+But greedy argmax loops into degenerate repetition ("Nami的AI夥伴跟Nami跟跟
+Nami"), and the strict tier (HYP44A) correctly penalizes that degeneracy. So
+strict was measuring **decoder quality**, not knowledge. Scaling the model
+couldn't fix a decoding loop.
+
+**Lessons (promoted to memory):**
+1. **When an eval metric plateaus, audit the DECODER before scaling the model.**
+   any-hit ≫ strict is the tell: knowledge is there, generation is broken.
+2. The whole phase 10/11 saga was real science but aimed at the wrong layer.
+   The early signal (any-hit always high, strict capped) was visible from
+   HYP44A onward — we just read it as "capacity" instead of "decoding."
+3. Cheap inference-side levers (rep penalty, temperature, sampling) should be
+   in the search space from the start, not after 35 capacity HYPs.
+
+**Phase 10/11 retro**: not wasted — cosine-floor (HYP60/61) and the corpus
+work are genuine gains, and the adaptive-cosine + queue + ClawX fixes all
+shipped. But the headline metric was gated on decoding the entire time.
+
+New best: **strict 41** (HYP77 d96 + rep 1.3), deployed v0.4.0.0-reppenalty.
+Next: sweep rep_penalty finer (1.15/1.2/1.25) + rep_window, and re-examine
+whether the phase-11 paraphrase corpus (any-hit 50) + rep penalty stacks to
+strict >41.
