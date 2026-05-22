@@ -252,7 +252,12 @@ class GPTMini(Module):
         behaviour. Tunable via NAMI_REP_PENALTY env so eval/web_chat share it.
         """
         if rep_penalty is None:
-            rep_penalty = float(os.environ.get("NAMI_REP_PENALTY", "1.0"))
+            # HYP77 KEEP: default 1.3. The repetition penalty lifted strict
+            # 33→41 (+8), smashing the old "architecture-bound" strict-39
+            # ceiling — which turned out to be a greedy-argmax DECODING
+            # artifact, not model capacity. 1.3 and 1.5 both give 41; 1.3 is
+            # the gentler choice. Override via NAMI_REP_PENALTY.
+            rep_penalty = float(os.environ.get("NAMI_REP_PENALTY", "1.3"))
         ids = list(token_ids)
         n_prompt = len(ids)
         for _ in range(max_new):
