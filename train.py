@@ -492,16 +492,23 @@ def train(epochs: int = 200, lr: float = 0.002,
 
         avg_loss = total_loss / max(n_seqs, 1)
 
-        # HYP73: adaptive cosine. After warmup + a couple epochs, measure
-        # real sec/epoch and recompute expected_epochs so the cosine schedule
-        # spans ~92% of the budget regardless of model size. Fixes HYP72 flaw
-        # (150-ep cosine on 600min budget → idle at lr=0 after ep 150 for ~5h).
-        if (time_budget and not _cosine_recomputed
+        # HYP73 adaptive cosine (DISABLED after HYP74). The idea: measure
+        # sec/epoch, set cosine to span COSINE_BUDGET_FRAC of the budget.
+        # HYP74 disproved "longer cosine = better": at 0.92 frac the d96
+        # cosine ran 239-ep and gave strict 37 — WORSE than HYP71's fixed
+        # 60-ep (strict 38). Cosine length has an OPTIMUM (~60-ep for this
+        # d96/152KB corpus), not a monotone benefit. The fixed
+        # int(time_budget/240) formula above (= 60-ep at 240min) is the
+        # proven sweet spot, so we keep it and skip the recompute.
+        # COSINE_BUDGET_FRAC kept as an env knob for future big-model runs
+        # that genuinely need a longer schedule (d128 idled without it).
+        _frac = float(os.environ.get("NAMI_COSINE_BUDGET_FRAC", "0"))
+        if (_frac > 0 and time_budget and not _cosine_recomputed
                 and epoch == warmup_epochs + 2):
             sec_per_epoch = (time.time() - start) / (epoch + 1)
-            expected_epochs = max(20, int(time_budget * 0.92 / sec_per_epoch))
+            expected_epochs = max(20, int(time_budget * _frac / sec_per_epoch))
             _cosine_recomputed = True
-            print(f"  📐 adaptive cosine: ~{sec_per_epoch:.0f}s/ep → "
+            print(f"  📐 adaptive cosine (frac={_frac}): ~{sec_per_epoch:.0f}s/ep → "
                   f"expected_epochs={expected_epochs}")
 
         if epoch % 10 == 0 or epoch == epochs - 1:
