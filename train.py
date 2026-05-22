@@ -351,7 +351,7 @@ def compute_bpb(loss, tokenizer, texts):
     return loss / math.log(2) / avg
 
 
-TIME_BUDGET = 600 * 60  # HYP72 — Chinchilla scaling: d_model 128 (~1.5M params) needs proportional compute. HYP55 d128 failed at 240min (ep 14). 600min should give ~150 ep. expected_epochs = 600*60/240 = 150-ep cosine.
+TIME_BUDGET = 240 * 60  # HYP73 REVERT — back to 240 after d128/600min Chinchilla test confirmed capacity isn't the lever. Adaptive cosine (below) now spans the budget regardless. d96 + 240min + filtered corpus = HYP71 deployed baseline.
 
 
 # Phase 0 persona probes — questions taken from synthesize_qa.py's
@@ -405,7 +405,7 @@ def train(epochs: int = 200, lr: float = 0.002,
     # experiment showed scaling up just under-fits at our compute
     # budget (Chinchilla math: more params without proportional
     # compute = worse). Phase 0 setup remains the floor.
-    d_model, d_ff, num_heads, num_layers = 128, 384, 8, 4  # HYP72 — Chinchilla scaling test. HYP55 (d128) + HYP65 (5-layer) reverted from UNDERtraining at 240min. Now scale params AND compute together: d_model 96→128, d_ff 256→384, heads 6→8 (~1.5M params) + TIME_BUDGET 600min. Tests if 810K/4-layer ceiling is capacity-bound or compute-bound. Filtered corpus.
+    d_model, d_ff, num_heads, num_layers = 96, 256, 6, 4  # HYP73 REVERT — Chinchilla scale test DONE & NEGATIVE. d128/1.3M + proper 412-ep cosine + 600min gave best bpb 0.0420 but strict 37 / any-hit 46 (WORSE generalization than HYP71 d96's 38/49). Definitive: strict-39 ceiling is CORPUS-bound not capacity-bound — more params just overfit 152KB corpus. Back to d96. Next lever = corpus QUALITY.
     model = GPTMini(
         vocab_size=tokenizer.vocab_size,
         d_model=d_model, d_ff=d_ff, num_heads=num_heads,
