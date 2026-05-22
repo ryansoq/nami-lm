@@ -33,6 +33,14 @@ import re
 from pathlib import Path
 
 CLAWD = Path.home() / "clawd"
+
+# HYP76: dialogue up-weight, env-tunable. HYP75 added 18 quality paraphrases
+# at the legacy 5.0 weight → any-hit jumped to 50/51 (best ever) + soul-strong
+# 19/20, BUT strict dropped 38→34 (weight-5.0 degeneracy dilution, the journal's
+# known pattern). HYP76 lowers to 3.0 to keep the generalization gain while
+# recovering strict cleanliness.
+import os
+DIALOGUE_WEIGHT = float(os.environ.get("NAMI_DIALOGUE_WEIGHT", "3.0"))
 OUT = Path(__file__).parent / "data" / "phase0_qa.jsonl"
 
 
@@ -334,7 +342,7 @@ def main():
                         continue
                     seen_q.add(q_so_far)
                 pairs.append((q_so_far, text))
-                weighted.append(5.0)  # HYP30: multi-turn chunks weighted 5x
+                weighted.append(DIALOGUE_WEIGHT)  # HYP30: dialogue chunks up-weighted
                 history += text
                 dialogue_turn_chunks += 1
     print(f"  DIALOGUES → {dialogue_turn_chunks} per-turn chunks "
