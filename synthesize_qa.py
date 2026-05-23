@@ -212,10 +212,20 @@ def main():
     ]
     # All topics (phase 2: include book chapters — they have lots of
     # well-structured Q&A material in the form of "**term:** definition")
-    # Phase 11 HYP70: skip leetcode-*.md — they are pure C++ syntax reference,
-    # not Nami-domain knowledge. Adding them (4212→4284 vocab) caused persona
-    # dilution in HYP68/69 (strict -6 then recovered partial to -2).
-    PHASE11_EXCLUDE = {"leetcode-stl-cheatsheet.md", "leetcode-cpp-cheatsheet.md"}
+    # Phase 11 HYP70: skip leetcode-*.md — pure C++ syntax reference, not
+    # Nami-domain. HYP81: also skip the heavy book-*.md study notes (Ryan's
+    # interview reference material, NOT Nami persona/domain). HYP80 showed
+    # today's H&P + LLVM additions (+105 vocab technical text) diluted persona
+    # strict 41→38 (same HYP68 pattern). These docs are for Ryan to read, not
+    # for the persona model to memorize — keep the training corpus
+    # persona/project-focused.
+    PHASE11_EXCLUDE = {
+        "leetcode-stl-cheatsheet.md", "leetcode-cpp-cheatsheet.md",
+        "book-comp-arch-hennessy.md", "book-llvm.md", "book-mlir.md",
+        "book-compiler.md", "book-cpp.md", "book-linkers-loaders.md",
+        "interview-opencl-gpu-compiler.md", "stanford-cs336-notes.md",
+        "ssa-papers-jkl-lab.md",
+    }
     topics_dir = CLAWD / "memory" / "topics"
     for f in sorted(topics_dir.glob("*.md")):
         if f.name in PHASE11_EXCLUDE:
