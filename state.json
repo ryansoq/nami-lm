@@ -19,6 +19,12 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp85": {
+    "verdict": "confirm — rep 1.6 still optimal on EOS model, no change",
+    "sweep_on_eos": "rep 1.0→39, 1.2→40, 1.4→40, 1.6→42 (any-hit 47 throughout)",
+    "insight": "EOS + rep 1.0 = 39 (EOS alone does NOT break the ceiling — still need the penalty). EOS (clean stop) + rep 1.6 (anti-degen) are COMPLEMENTARY, both needed for 42. Deployed config optimal.",
+    "commit": "n/a"
+  },
   "last_result_hyp84": {
     "verdict": "KEEP — EOS token, deployed v0.5.0.0-eos (clean stopping)",
     "strict_rep16": 42, "any_hit": 47, "topic": 14, "soul_strict": 15,
