@@ -183,7 +183,7 @@ class NamiHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path.rstrip("/") in ("/health", "/api/health", "/nami-lm/api/health"):
-            return self._json(200, {"ok": True, "model": "v0.5.0.0-eos"})
+            return self._json(200, {"ok": True, "model": "v0.5.1.0-weekly"})
         return self._json(404, {"error": "not found"})
 
     def do_POST(self):
@@ -208,7 +208,7 @@ class NamiHandler(BaseHTTPRequestHandler):
             return self._json(200, {
                 "a": a,
                 "latency_ms": int((time.time() - t0) * 1000),
-                "model": "v0.5.0.0-eos",
+                "model": "v0.5.1.0-weekly",
             })
         if path.endswith("/feedback"):
             FEEDBACK_LOG.parent.mkdir(parents=True, exist_ok=True)
