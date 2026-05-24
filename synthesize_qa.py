@@ -236,6 +236,14 @@ def main():
     daily_files = sorted(memory_dir.glob("2026-*.md"), reverse=True)[:30]
     for f in daily_files:
         sources.append(f)
+    # HYP87: weekly REM reports — authentic Nami persona/project narratives
+    # (distilled "本週主軸 / 學到的事"). Different category from the technical
+    # book-notes (HYP68/80 diluted) and synthetic paraphrases (HYP75/76): this
+    # is real on-domain prose. Testing if authentic data behaves differently.
+    weekly_dir = memory_dir / "weekly"
+    if weekly_dir.exists():
+        for f in sorted(weekly_dir.glob("2026-W*.md")):
+            sources.append(f)
     # Auto-memory snapshot (phase 2: agent's collaboration patterns).
     # Phase 5 HYP4: skip auto-memory MEMORY.md — it's an index file, its
     # `- [Title](file.md) — hook` bullets corrupt the parser's key extraction
