@@ -156,8 +156,9 @@ def chat(question: str) -> str:
     ids = _TOK.encode(q)
     if not ids:
         return "（這個問題的字我還沒學會，問點別的？）"
-    gen = _MODEL.generate(ids, max_new=40, temperature=0.05)
-    raw = _TOK.decode(gen[len(ids):])
+    gen = _MODEL.generate(ids, max_new=40, temperature=0.05,
+                          eos_id=getattr(_TOK, "token2id", {}).get("∎"))
+    raw = _TOK.decode(gen[len(ids):]).replace("∎", "")  # HYP84: strip EOS
     return _trim_answer(raw) or "（沒答案，再問一次？）"
 
 

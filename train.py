@@ -47,6 +47,10 @@ HERE = Path(__file__).parent
 QA_CORPUS = HERE / "data" / "phase0_qa.jsonl"
 TOK_DIR = HERE / "tokenizer"
 
+# HYP84: end-of-answer marker. Appended to every training sequence so the
+# model learns to emit it at an answer's end; generate() stops on it.
+EOS = "∎"
+
 # Phase 1 evaluation: BPE infra ships and is lossless, but at the
 # 18 KB phase-0 corpus most Chinese chars don't reach the merge
 # frequency threshold and end up as 3 separate byte-tokens. That hurts
@@ -77,7 +81,11 @@ def load_corpus() -> tuple[list[str], list[float]]:
             d = json.loads(line)
             q, a = d["q"].strip(), d["a"].strip()
             q = q.rstrip("?？")
-            out.append(f"{q}？{a}")
+            # HYP84: append EOS marker so the model learns where an answer
+            # ends → generate() can stop on it instead of rambling for a fixed
+            # token count. '∎' (U+220E) never appears in answers; char-level
+            # WordTokenizer makes it one token.
+            out.append(f"{q}？{a}{EOS}")
             weights.append(float(d.get("w", 1.0)))
     return out, weights
 
@@ -241,7 +249,7 @@ class GPTMini(Module):
         return logits.reshape(T, self.vocab_size) if single else logits
 
     def generate(self, token_ids, max_new=50, temperature=0.1,
-                 rep_penalty=None, rep_window=None):
+                 rep_penalty=None, rep_window=None, eos_id=None):
         """HYP77: optional repetition penalty (inference-side lever).
 
         Greedy argmax loops easily at this scale ("Nami的AI夥伴跟Nami跟跟Nami")
@@ -277,7 +285,10 @@ class GPTMini(Module):
                         next_logits[t] *= rep_penalty
             e = np.exp(next_logits - next_logits.max())
             probs = e / e.sum()
-            ids.append(int(np.argmax(probs)))
+            nxt = int(np.argmax(probs))
+            ids.append(nxt)
+            if eos_id is not None and nxt == eos_id:  # HYP84: stop at EOS
+                break
         return ids
 
     @property

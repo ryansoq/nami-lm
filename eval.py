@@ -148,8 +148,9 @@ def _run_probes(model, tok, probes, label, quiet=False):
                 print(f"  ⚪ {q!r} → not in vocab, skipping")
             miss += 1
             continue
-        gen = model.generate(ids, max_new=20, temperature=0.01)
-        completion = tok.decode(gen[len(ids):])[:30]
+        gen = model.generate(ids, max_new=20, temperature=0.01,
+                              eos_id=getattr(tok, "token2id", {}).get("∎"))
+        completion = tok.decode(gen[len(ids):]).replace("∎", "")[:30]
         verdict = _classify(completion, expected)
         if verdict == "strict":
             strict += 1; strong += 1; mark = "✨"   # strict pass
