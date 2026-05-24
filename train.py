@@ -268,6 +268,11 @@ class GPTMini(Module):
             rep_penalty = float(os.environ.get("NAMI_REP_PENALTY", "1.6"))
         if rep_window is None:
             rep_window = int(os.environ.get("NAMI_REP_WINDOW", "12"))
+        # HYP86: ignore EOS until the answer has at least this many tokens —
+        # the EOS sometimes fires too early, cutting multi-clause answers
+        # short (any-hit 50→47, soul-strong 19→17 in HYP84). 0 = honor EOS
+        # immediately (HYP84 behavior).
+        min_answer = int(os.environ.get("NAMI_MIN_ANSWER", "0"))
         ids = list(token_ids)
         n_prompt = len(ids)
         for _ in range(max_new):
@@ -287,7 +292,9 @@ class GPTMini(Module):
             probs = e / e.sum()
             nxt = int(np.argmax(probs))
             ids.append(nxt)
-            if eos_id is not None and nxt == eos_id:  # HYP84: stop at EOS
+            # HYP84 stop at EOS; HYP86 only once answer ≥ min_answer tokens
+            if (eos_id is not None and nxt == eos_id
+                    and (len(ids) - n_prompt) >= min_answer):
                 break
         return ids
 
