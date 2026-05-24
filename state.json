@@ -19,8 +19,15 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
+  "last_result_hyp84": {
+    "verdict": "KEEP — EOS token, deployed v0.5.0.0-eos (clean stopping)",
+    "strict_rep16": 42, "any_hit": 47, "topic": 14, "soul_strict": 15,
+    "vs_hyp82": "strict 42 (=), any-hit 47 (<50 — answers now SHORT/clean not rambling), topic 13→14. Live chat: 妳是誰→Nami, Nami害怕什麼→丟掉記憶連續性, Kaspa→基於BlockDAG的區塊鏈 — crisp, no trailing ramble (vs HYP82's rambling).",
+    "note": "First phase-12 win. EOS '∎' teaches answer endings; generate stops on it. any-hit drop is the POINT (less ramble = fewer stray keywords). Real UX win for chat. backup hyp84-eos.bak.",
+    "commit": "pending"
+  },
   "best_active": "v0.4.2.0-rep16 (HYP81 weights + rep 1.6): strict 42, any-hit 50/51. HYP82 sweep found 1.6 is the peak for the persona-pure model (1.2-1.4→41, 1.6→42, 1.8/2.0→41, 2.5→42 but any-hit 49). 695K params, vocab 3083. Deployed. Backup: model_weights.json.hyp81-best.bak.",
-  "current_pid": 1740672,
+  "current_pid": null,
   "current_started": "2026-05-24T08:50:00+08:00",
   "current_hypothesis": "phase 12 HYP84 — EOS token. Append marker ∎ to every training sequence so the model learns where answers end; generate() stops on it (eos_id threaded to eval.py + web_chat). Targets the trailing-ramble seen in live chat (model says correct answer then rambles for fixed token count). Cleaner output may also lift strict (less degen penalty). vocab 3083→3084. Eval at rep 1.6 + eos. TCR: revert if strict < 38.",
   "current_log": "/tmp/nami-lm-hyp84-*",
