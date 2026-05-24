@@ -912,3 +912,48 @@ New best: **strict 41** (HYP77 d96 + rep 1.3), deployed v0.4.0.0-reppenalty.
 Next: sweep rep_penalty finer (1.15/1.2/1.25) + rep_window, and re-examine
 whether the phase-11 paraphrase corpus (any-hit 50) + rep penalty stacks to
 strict >41.
+
+---
+
+## ⭐ Reflection — HYP78-81: phase 11 SOLVED (decoding + persona-pure corpus) [2026-05-24]
+
+Following HYP77's breakthrough (rep penalty broke the strict-39 ceiling), HYP78-81
+nailed down the phase-11 answer:
+
+| HYP | change | strict@rep1.3 | verdict |
+|-----|--------|---------------|---------|
+| 78 | rep-penalty sweep on HYP77 | 1.2→39, 1.3→41, 1.5→41 | confirm 1.3 sweet spot |
+| 79 | paraphrase corpus + rep 1.3 | 38 | REVERT (stacking fails) |
+| 80 | no-paraphrase but corpus grew from doc-writing | 38 | REVERT (technical dilution) |
+| 81 | persona-pure corpus (exclude book notes) + rep 1.3 | **41, any-hit 50/51, soul 19strong** | **KEEP — deployed** |
+
+**Two-part phase-11 answer:**
+1. **Decoding > capacity.** The strict-39 "ceiling" that phase 10 (scale/cosine/wd/
+   batch) and phase 11 (corpus quantity/quality) fought for ~37 HYPs was a
+   greedy-argmax repetition-loop artifact. A CTRL-style repetition penalty
+   (rep 1.3) fixed it: 33→41. No retrain.
+2. **Corpus should be persona-PURE, not knowledge-stuffed.** HYP79/80 showed adding
+   content (paraphrases OR my own interview book-notes that leaked in via
+   synthesize_qa reading topics/*.md) DILUTES persona. HYP81 excluded all heavy
+   book-*.md → strict held 41, any-hit rose to 50/51 (best), soul to 19 strong
+   (best), in a SMALLER model (695K vs 810K). topic-recall held 13/16 (the eval's
+   topic facts live in dialogues/persona_qa, not the book notes).
+
+**Meta-lessons (promoted to memory):**
+- `feedback_audit_decoder_before_scaling` — any-hit ≫ strict = knowledge present,
+  decoding broken. Check the decoder before scaling.
+- A self-inflicted trap: my own doc-writing (H&P/LLVM/leetcode notes for Ryan's
+  interview) fed the nami-lm corpus via synthesize_qa's `topics/*.md` glob. Fixed
+  with PHASE11_EXCLUDE. Lesson: a shared directory used by both a human-facing
+  task and a training pipeline will cross-contaminate; gate the pipeline's inputs.
+- Operational: `pkill -f "X"` matches its own bash wrapper when the wrapper command
+  contains "X" → self-kills → empty-output exit 1. Kill by PID number instead.
+  Also: setsid (not nohup+disown) to survive the bash-wrapper exit; run_in_background
+  to survive the §5.4/heartbeat injection cadence.
+
+**Deployed:** v0.4.1.0-persona-pure (HYP81): strict 41 / any-hit 50 / soul 19strong,
+695K params, vocab 3083, rep 1.3. Backup saved.
+
+**Phase 12 candidates (next):** instruction-tuning regime (the genuinely different
+path now that decoding+corpus are solved); OR a deliberate, curated persona/project
+corpus expansion (NOT auto-glob) to lift topic-recall past 13/16 while staying pure.
