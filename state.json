@@ -19,7 +19,15 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
-  "best_active": "v0.4.1.0-persona-pure (HYP81): strict 41, any-hit 50/51 (98% best ever), soul 15strict/19strong (best). 695K params, vocab 3083, persona-pure corpus (no book notes) + rep_penalty 1.3. Deployed web_chat. Backup: model_weights.json.hyp81-best.bak + tokenizer_vocab.json.hyp81-best.bak.",
+  "best_active": "v0.4.2.0-rep16 (HYP81 weights + rep 1.6): strict 42, any-hit 50/51. HYP82 sweep found 1.6 is the peak for the persona-pure model (1.2-1.4→41, 1.6→42, 1.8/2.0→41, 2.5→42 but any-hit 49). 695K params, vocab 3083. Deployed. Backup: model_weights.json.hyp81-best.bak.",
+  "last_result_hyp82": {
+    "verdict": "KEEP — rep 1.6 default, new best strict 42",
+    "sweep": "rep 1.2→41, 1.3→41, 1.4→41, 1.6→42, 1.8→41, 2.0→41, 2.5→42(any-hit 49)",
+    "any_hit": 50,
+    "lever": "inference-side rep_penalty tuning on HYP81 persona-pure model",
+    "note": "Persona-pure model tolerates stronger penalty than HYP77 (1.3). 1.6 = peak strict 42 + any-hit 50 both best. Set default 1.3→1.6, redeployed v0.4.2.0-rep16. No retrain.",
+    "commit": "pending"
+  },
   "last_result_hyp81": {
     "verdict": "KEEP — new best, deployed",
     "epochs": 460,
