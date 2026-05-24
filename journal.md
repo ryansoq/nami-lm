@@ -983,3 +983,42 @@ what it knows; decoding is fixed (rep 1.6); corpus is persona-pure.
 Phase 11 is DONE. nami-lm: strict 39 (stuck 2 phases) → 42, zero added params, via
 decoder fix + corpus hygiene + penalty tuning. Holding at the optimum; next move is
 Ryan's call on phase 12 (instruction tuning is the real unlock).
+
+---
+
+## Reflection — HYP82-85: phase-12 EOS + decoder tuning converged [2026-05-24]
+
+After phase 11 closed at strict 42 (HYP81 persona-pure + rep 1.3), HYP82-85
+optimized the decoder and added an EOS token:
+
+| HYP | change | result |
+|-----|--------|--------|
+| 82 | rep-penalty sweep on persona-pure model | 1.6 → strict 42 (peak); set default |
+| 83 | rep_window sweep | 12 already optimal (12/16/24→42, <12 worse) |
+| 84 | EOS token '∎' + stop-on-EOS | **KEEP, deployed v0.5.0.0-eos** — clean stopping, strict 42, topic 13→14 |
+| 85 | rep-penalty sweep on EOS model | 1.6 still optimal; EOS+penalty complementary |
+
+**Phase-12 finding: EOS and rep-penalty are COMPLEMENTARY, not redundant.**
+EOS + rep 1.0 = strict 39 (EOS alone does NOT break the ceiling). EOS + rep 1.6
+= 42. The rep penalty kills mid-answer degeneration; the EOS kills end-of-answer
+ramble. Both needed. Live chat went from "Nami害怕什麼 → 丟掉記憶連續性 不再斷了對你
+怕的寫進memory檔 怎麼面攻器..." to a crisp "丟掉記憶連續性".
+
+**Cost of EOS**: any-hit 50→47 and soul-strong 19→17 — both because answers are
+now SHORT (stop at the natural end). Fewer stray keywords (any-hit) and some
+multi-clause soul answers cut early (soul-strong). Net positive: strict held 42,
+topic up, UX dramatically cleaner. The any-hit drop is the intended behavior.
+
+**Convergence statement**: nami-lm is feature-complete for its purpose (answer
+persona/project/soul questions cleanly). The strict 39→42 + ramble-free arc was
+achieved with ZERO added parameters via three complementary levers:
+  1. persona-pure corpus (no technical book-note dilution)
+  2. repetition penalty 1.6 (anti mid-answer degeneration)
+  3. EOS token (anti end-of-answer ramble)
+Deployed v0.5.0.0-eos, 695K params, vocab 3084.
+
+**>42 requires a regime change, not more micro-HYPs:** the residual gap is
+eval-substring narrowness (SwiGLU answers correctly but eval wants 'FFN') + the
+soul-strong/any-hit shortening trade. A genuine lift needs either instruction
+tuning at larger scale + corpus, or a fairer eval — both are deliberate design
+decisions, not autonomous micro-tweaks. Holding here as the converged optimum.
