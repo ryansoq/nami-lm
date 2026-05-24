@@ -957,3 +957,29 @@ nailed down the phase-11 answer:
 **Phase 12 candidates (next):** instruction-tuning regime (the genuinely different
 path now that decoding+corpus are solved); OR a deliberate, curated persona/project
 corpus expansion (NOT auto-glob) to lift topic-recall past 13/16 while staying pure.
+
+---
+
+## Phase 11 closure note — the residual strict gap is eval-substring, not knowledge [2026-05-24]
+
+Diagnosed the topic-recall "misses" on the deployed HYP82 model (strict 42 @ rep 1.6).
+Only ONE hard ❌: `SwiGLU是什麼？` → model said `gate(96→256) * silu` — a *correct*
+technical description — but the eval expected the literal substring `FFN`. The model
+KNOWS SwiGLU; the eval's expected-substring is just too narrow. Most other topic
+probes pass (✨); the rest are trailing-ramble (web_chat _trim_degen cuts it) or the
+same narrow-substring issue.
+
+**Conclusion**: strict 42/51 is the genuine ceiling. The remaining 9 points are
+mostly (a) eval expected-substrings stricter than the model's correct phrasing, and
+(b) minor trailing degeneration the deployed _trim handles. There is NO knowledge gap
+to fill — adding corpus has only ever diluted (HYP68/75/76/79/80). The model knows
+what it knows; decoding is fixed (rep 1.6); corpus is persona-pure.
+
+**>42 requires a regime change, not more of phase 11:**
+- instruction tuning (proper Q→A format + stop token to kill trailing ramble), OR
+- a fairer eval (accept correct alternate phrasings — but that's metric-gaming, not
+  model improvement).
+
+Phase 11 is DONE. nami-lm: strict 39 (stuck 2 phases) → 42, zero added params, via
+decoder fix + corpus hygiene + penalty tuning. Holding at the optimum; next move is
+Ryan's call on phase 12 (instruction tuning is the real unlock).
