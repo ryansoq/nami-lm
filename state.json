@@ -20,6 +20,12 @@
   "current_hypothesis": null,
   "current_log": null,
   "best_active": "v0.4.2.0-rep16 (HYP81 weights + rep 1.6): strict 42, any-hit 50/51. HYP82 sweep found 1.6 is the peak for the persona-pure model (1.2-1.4→41, 1.6→42, 1.8/2.0→41, 2.5→42 but any-hit 49). 695K params, vocab 3083. Deployed. Backup: model_weights.json.hyp81-best.bak.",
+  "last_result_hyp83": {
+    "verdict": "confirm — rep_window 12 already optimal, strict 42 ceiling",
+    "sweep": "window 6→40, 8→40, 12→42, 16→42, 24→42 (all @ rep 1.6)",
+    "note": "rep_window default 12 is optimal; 12/16/24 plateau at 42, <12 worse. strict 42 is the genuine ceiling for 695K persona-pure + rep 1.6. Added NAMI_REP_WINDOW env knob (default 12, deployed unchanged). No more cheap inference gains — phase 12 (regime change) needed for >42.",
+    "commit": "pending"
+  },
   "last_result_hyp82": {
     "verdict": "KEEP — rep 1.6 default, new best strict 42",
     "sweep": "rep 1.2→41, 1.3→41, 1.4→41, 1.6→42, 1.8→41, 2.0→41, 2.5→42(any-hit 49)",

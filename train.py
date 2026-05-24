@@ -241,7 +241,7 @@ class GPTMini(Module):
         return logits.reshape(T, self.vocab_size) if single else logits
 
     def generate(self, token_ids, max_new=50, temperature=0.1,
-                 rep_penalty=None, rep_window=12):
+                 rep_penalty=None, rep_window=None):
         """HYP77: optional repetition penalty (inference-side lever).
 
         Greedy argmax loops easily at this scale ("Nami的AI夥伴跟Nami跟跟Nami")
@@ -258,6 +258,8 @@ class GPTMini(Module):
             # 2.5→42 but any-hit drops to 49 (too aggressive). 1.6 is the peak.
             # Override via NAMI_REP_PENALTY.
             rep_penalty = float(os.environ.get("NAMI_REP_PENALTY", "1.6"))
+        if rep_window is None:
+            rep_window = int(os.environ.get("NAMI_REP_WINDOW", "12"))
         ids = list(token_ids)
         n_prompt = len(ids)
         for _ in range(max_new):
