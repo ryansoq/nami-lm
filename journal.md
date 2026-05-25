@@ -1022,3 +1022,36 @@ eval-substring narrowness (SwiGLU answers correctly but eval wants 'FFN') + the
 soul-strong/any-hit shortening trade. A genuine lift needs either instruction
 tuning at larger scale + corpus, or a fairer eval — both are deliberate design
 decisions, not autonomous micro-tweaks. Holding here as the converged optimum.
+
+---
+
+## Reflection — HYP86-88: phase-12 corpus questions closed [2026-05-25]
+
+| HYP | change | result | verdict |
+|-----|--------|--------|---------|
+| 86 | min-answer-before-EOS sweep | no effect (EOS fires at right boundary) | confirm |
+| 87 | add weekly REM reports (authentic Nami narratives) | strict 42, any-hit 47→48, soul-strong 17→18 | **KEEP, deployed v0.5.1.0-weekly** |
+| 88 | d_model 96→112 on clean corpus | strict 41 (-1), overfit | REVERT |
+
+**Phase-12 corpus questions are now settled by a clean A/B:**
+- **Data QUALITY/authenticity helps** (HYP87): weekly reports — real distilled Nami
+  persona/project prose — are the FIRST corpus-add since phase 10 that didn't
+  dilute. They slightly improved any-hit + soul-strong. The distinguishing factor
+  vs the 6 prior REVERTs: authentic ON-DOMAIN narrative, not technical book-notes
+  (HYP68/80) or synthetic paraphrases (HYP75/76).
+- **Data QUANTITY via capacity does NOT help** (HYP88, 3rd confirmation after
+  HYP55/72/73): scaling params overfits the data-starved ~113KB corpus regardless
+  of corpus cleanliness. d96 is the right size.
+
+**The synthesis: nami-lm is DATA-bound, and the right data is authentic Nami
+narrative.** The weekly-feed (memory/weekly/*.md now in synthesize_qa) is a
+self-sustaining mechanism — every Sunday REM report adds genuine persona data, so
+the model grows with our actual work. This is exactly Ryan's original "慢慢養慢慢
+長大" vision, now mechanized.
+
+**Current deployed optimum**: v0.5.1.0-weekly (HYP87), d96/710K, vocab 3238, strict
+42 + clean stopping (EOS) + rep 1.6. Three complementary levers (persona-pure +
+EOS + rep-penalty) + authentic-data-feed. >42 requires substantially more authentic
+data (accruing weekly) or a true regime change (instruction tuning) — both are
+time/strategy, not micro-HYPs. Holding at the optimum; the weekly cadence drives
+further growth autonomously.
