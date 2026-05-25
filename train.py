@@ -451,7 +451,7 @@ def train(epochs: int = 200, lr: float = 0.002,
     # experiment showed scaling up just under-fits at our compute
     # budget (Chinchilla math: more params without proportional
     # compute = worse). Phase 0 setup remains the floor.
-    d_model, d_ff, num_heads, num_layers = 96, 256, 6, 4  # HYP73 REVERT — Chinchilla scale test DONE & NEGATIVE. d128/1.3M + proper 412-ep cosine + 600min gave best bpb 0.0420 but strict 37 / any-hit 46 (WORSE generalization than HYP71 d96's 38/49). Definitive: strict-39 ceiling is CORPUS-bound not capacity-bound — more params just overfit 152KB corpus. Back to d96. Next lever = corpus QUALITY.
+    d_model, d_ff, num_heads, num_layers = 112, 288, 8, 4  # HYP88: 96→112 (gentler than the failed d128). HYP72/73 d128 overfit but on the POLLUTED corpus; HYP87 showed corpus hygiene + authentic data changed the picture. Re-test a modest width bump on the now-clean persona-pure+EOS+weekly corpus. TCR revert to 96 if strict < 40. 112/8 = head_dim 14.
     model = GPTMini(
         vocab_size=tokenizer.vocab_size,
         d_model=d_model, d_ff=d_ff, num_heads=num_heads,
