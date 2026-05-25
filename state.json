@@ -23,11 +23,19 @@
   "current_started": "2026-05-25T09:00:00+08:00",
   "current_hypothesis": "phase 12 HYP87 — add weekly REM reports (authentic Nami persona/project narratives) to corpus. Distinct category from failed adds: technical book-notes (HYP68/80) and synthetic paraphrases (HYP75/76) both diluted; this is REAL on-domain prose. Corpus 1363→1476 chunks, vocab 3084→3238 (+154, watch for dilution from HYP#s/tickers/financial terms). Eval at rep 1.6 + eos. TCR revert if strict < 38.",
   "current_log": "/tmp/nami-lm-hyp87-*",
-  "last_result_hyp86_minanswer": "current_pid": 1790130,
+  "last_result_hyp86_minanswer": "current_pid": null,
   "current_started": "2026-05-25T12:35:00+08:00",
   "current_hypothesis": "phase 12 HYP88 — d_model 96→112 (894K params) on the now-CLEAN corpus (persona-pure + EOS + weekly). HYP72/73 d128 overfit but on the POLLUTED corpus; HYP87 showed corpus hygiene changed the data picture. Re-test a modest width bump (gentler than the failed 128). Ryan said 繼續. TCR revert to d96 if strict < 40. Eval rep 1.6 + eos.",
   "current_log": "/tmp/nami-lm-hyp88-*",
-  "last_result_hyp87_kept": "last_result_hyp87": {
+  "last_result_hyp87_kept": "last_result_hyp88": {
+    "verdict": "REVERT — d112 strict 41 < d96's 42 even on clean corpus",
+    "strict_rep16": 41, "any_hit": 49, "soul": "14strict/18strong",
+    "vs_hyp87": "strict 41 < 42 (-1); any-hit 49 (+1) but strict gate lower",
+    "lever": "d_model 96→112 (894K) on clean persona-pure+EOS+weekly corpus",
+    "note": "3rd capacity confirmation (HYP55 d128-old / HYP72-73 d128 / HYP88 d112): scaling params hurts on the data-starved ~113KB corpus REGARDLESS of corpus cleanliness. d96 is the right size, capacity definitively settled. Reverted to HYP87 d96 (deployed v0.5.1.0-weekly). >42 needs MORE DATA not more params.",
+    "commit": "pending"
+  },
+  "last_result_hyp87": {
     "verdict": "KEEP — deployed v0.5.1.0-weekly. FIRST non-diluting corpus-add.",
     "strict_rep16": 42, "any_hit": 48, "topic": 14, "soul": "15strict/18strong",
     "vs_hyp84": "strict 42 (=), any-hit 47→48, soul-strong 17→18, topic 14 (=). All ≥ HYP84.",

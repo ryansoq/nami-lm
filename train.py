@@ -451,7 +451,7 @@ def train(epochs: int = 200, lr: float = 0.002,
     # experiment showed scaling up just under-fits at our compute
     # budget (Chinchilla math: more params without proportional
     # compute = worse). Phase 0 setup remains the floor.
-    d_model, d_ff, num_heads, num_layers = 112, 288, 8, 4  # HYP88: 96→112 (gentler than the failed d128). HYP72/73 d128 overfit but on the POLLUTED corpus; HYP87 showed corpus hygiene + authentic data changed the picture. Re-test a modest width bump on the now-clean persona-pure+EOS+weekly corpus. TCR revert to 96 if strict < 40. 112/8 = head_dim 14.
+    d_model, d_ff, num_heads, num_layers = 96, 256, 6, 4  # HYP88 REVERT — d112 on CLEAN corpus still strict 41 < d96 42. 3rd confirmation (HYP55/72/73/88): scaling params hurts on this data-starved 113KB corpus regardless of cleanliness. d96 is the right size; capacity settled. Deployed = HYP87 d96 v0.5.1.0-weekly.
     model = GPTMini(
         vocab_size=tokenizer.vocab_size,
         d_model=d_model, d_ff=d_ff, num_heads=num_heads,
