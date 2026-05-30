@@ -1,45 +1,50 @@
 # nami-lm — HYP backlog (priority order)
 
-## Next up (phase 10 candidates, post-HYP43)
+> Refreshed 2026-05-30 (Opus 4.8). Phase 10/11/12 levers are exhausted;
+> deployed optimum = **HYP87 v0.5.1.0-weekly: strict 42/51, any-hit 50/51**,
+> 695K params (d96), vocab 3238, ~113KB persona-pure corpus.
+> Three lever families are SETTLED — see "Closed" below. The only paths to
+> >42 are (a) more authentic on-domain data, or (b) a regime change.
 
-- **HYP44: print frequency 10→5** — infra fix, makes ep 5/15/25 visible
-  for budget monitoring. Not a real HYP (no scientific lever) but
-  improves observability of HYP45+. Cost: 1-line edit. Stack on whatever
-  the next real HYP is.
-- **HYP45: cosine LR schedule + warmup 10%** — current lr=0.002 flat for
-  10 ep warmup then... what? Check train.py for schedule. Llama2 uses
-  cosine decay. 670K params at 100KB corpus probably leaves late-epoch
-  signal on table.
-- **HYP46: BATCH_SIZE 8→16** — doubles batch parallelism. Risk: AdamW
-  dynamics shift (effective lr changes). Mitigation: keep lr fixed,
-  measure if convergence speed compensates for the optimizer disruption.
-  Should land ~2x epochs/budget.
-- **HYP47: SwiGLU d_ff 256→384** — wider FFN inside same layers. params
-  670K→~900K. Cheaper than num_layers bump per "capability unit". Pair
-  with budget extension if needed.
-- **HYP48: persona PROBE alignment** — extend single-turn from 51 to
-  full corpus Q's (~1500), report top-K acc. Current 51-probe set
-  frozen since HYP18 may not align with current corpus growth.
+## Live candidates (priority order)
 
-## Architecture explorations (re-validate at d_model ≥ 128 first)
+- **Regime change: instruction tuning (phase 13)** — the real unlock for
+  >42 strict. Not a 15-min tick; needs design (instruction/response format,
+  loss masking on the prompt, eval-harness changes). STRATEGIC — flag to
+  Ryan before starting; this is the next big project, not an autonomous run.
+- **Daily-file corpus window 30→60** — authentic on-domain Nami narrative is
+  the ONE corpus-add category proven non-diluting (HYP87 weekly reports:
+  any-hit 47→48, soul-strong 17→18). Expanding the daily window is the same
+  category. EV: marginal (likely lifts soft metrics, not strict 42). COST: a
+  full ~4h retrain. Gate behind Ryan's nod given the frugality directive —
+  do NOT auto-launch.
+- **Hard-negative persona pairs** — "Nami是Aqua嗎？→不是，Aqua是另一個AI夥伴"
+  style contrastive pairs to sharpen persona boundaries. Cheap to author,
+  rides on the next retrain whenever one happens. Targets soul/persona axes,
+  not strict.
 
-- RMSNorm — HYP38/39 failed at d_model 96, retry at 128/256
-- RoPE — positional encoding lever, swap pos_emb to rotary
-- GQA (grouped-query attention) — Llama2 lever, expensive to implement
-  in numpy-grad
-- Tied embedding (HYP9 redo) — already in current train.py? grep to
-  verify before queuing again
+## Closed / invalidated (do NOT re-run)
 
-## Data work (orthogonal to architecture)
+- **Capacity scaling (d≥112/128, more layers)** — REVERTED 3× (HYP55, 72/73,
+  88). Scaling params overfits the data-starved ~113KB corpus regardless of
+  corpus cleanliness. d96 is the right size, definitively. RMSNorm/RoPE/GQA
+  "retry at d≥128" is moot because d≥128 itself reverts.
+- **Decoding levers** — SETTLED. rep_penalty 1.6 + rep_window 12 + EOS token
+  is the optimum (HYP77/78/82/83/84/85). The strict-39 "ceiling" was a
+  greedy-argmax decoding bug, not capacity.
+- **Cosine schedule / LR floor / warmup** — exhausted (HYP44B/60/61/62/74).
+  60-ep cosine is the sweet spot; floor lowering hit FP precision at HYP62.
+- **Batch size (8→16, 8→4), weight decay (0.03/0.05)** — wrong lever family
+  at this scale (HYP63/64/66/67).
+- **Synthetic paraphrases / technical book-notes in corpus** — DILUTE persona
+  (HYP68/75/76/79/80). Only authentic Nami prose helps. PHASE11_EXCLUDE set
+  in synthesize_qa.py keeps book-notes out.
+- **HYP44-48 (old "next up")** — all consumed in phase 10 (print-freq, cosine,
+  batch, d_ff, probe alignment). Superseded by the phase-10/11/12 arc above.
 
-- Corpus expansion: pull in last 60 daily files (vs current 30)
-- Per-category curriculum: train each category 2 epochs separately,
-  then interleave (prevents crowd-out from HYP34-37)
-- Hard-negative pairs: "Nami是Aqua嗎？→ 不是，Aqua是另一個 AI 夥伴"
-  to address persona contamination
+## Mechanism note
 
-## Simplification queue
-
-- Drop duplicate Bob/Whisper variants once eval anchors stable
-- Consolidate inference-time normalizer rules (web_chat.py) — currently
-  duplicates work HYP40/42 tried to bake in
+HYP87's weekly-REM-report feed means the corpus grows with authentic Nami
+narrative every Sunday REM pass automatically — the model "慢慢養" without a
+manual retrain decision. That is the standing low-cost growth path; no tick
+needs to force a retrain.
