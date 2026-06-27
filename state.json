@@ -23,11 +23,11 @@
   "current_started": "2026-05-25T09:00:00+08:00",
   "current_hypothesis": "phase 12 HYP87 — add weekly REM reports (authentic Nami persona/project narratives) to corpus. Distinct category from failed adds: technical book-notes (HYP68/80) and synthetic paraphrases (HYP75/76) both diluted; this is REAL on-domain prose. Corpus 1363→1476 chunks, vocab 3084→3238 (+154, watch for dilution from HYP#s/tickers/financial terms). Eval at rep 1.6 + eos. TCR revert if strict < 38.",
   "current_log": "/tmp/nami-lm-hyp87-*",
-  "last_result_hyp86_minanswer": "current_pid": null,
+  "current_pid": null,
   "current_started": "2026-05-25T12:35:00+08:00",
   "current_hypothesis": "phase 12 HYP88 — d_model 96→112 (894K params) on the now-CLEAN corpus (persona-pure + EOS + weekly). HYP72/73 d128 overfit but on the POLLUTED corpus; HYP87 showed corpus hygiene changed the data picture. Re-test a modest width bump (gentler than the failed 128). Ryan said 繼續. TCR revert to d96 if strict < 40. Eval rep 1.6 + eos.",
   "current_log": "/tmp/nami-lm-hyp88-*",
-  "last_result_hyp87_kept": "last_result_hyp88": {
+  "last_result_hyp88": {
     "verdict": "REVERT — d112 strict 41 < d96's 42 even on clean corpus",
     "strict_rep16": 41, "any_hit": 49, "soul": "14strict/18strong",
     "vs_hyp87": "strict 41 < 42 (-1); any-hit 49 (+1) but strict gate lower",
