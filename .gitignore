@@ -11,3 +11,6 @@ tokenizer_vocab.json
 data/*.jsonl
 data/cache/
 *.log
+tokenizer_vocab.json.*.bak
+state.json.*.bak
+state.json.bak-*

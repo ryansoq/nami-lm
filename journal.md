@@ -1055,3 +1055,49 @@ EOS + rep-penalty) + authentic-data-feed. >42 requires substantially more authen
 data (accruing weekly) or a true regime change (instruction tuning) — both are
 time/strategy, not micro-HYPs. Holding at the optimum; the weekly cadence drives
 further growth autonomously.
+
+---
+
+## HYP89 — the weekly feed finally got absorbed [2026-08-05]
+
+**KEEP. strict 42 → 43/51 (new best), any-hit 50 → 49, persona 5/5, 200 ep in 6325s.**
+
+HYP87 built a self-sustaining growth mechanism — `memory/weekly/*.md` globbed into
+`synthesize_qa.py`, so every Sunday REM report feeds the model automatically. The
+backlog even recorded "no tick needs to force a retrain."
+
+**That was wrong, and it cost 10 weeks.** The glob only decides what a retrain
+*would* ingest. With no retrain between 2026-05-25 and today, six accrued reports
+(W22/26/27/29/30/31, +27.6KB) sat unread. `data/phase0_qa.jsonl` still had a
+May 25 mtime. The mechanism produced exactly zero benefit until something ran it.
+
+**Lesson for the backlog: a data pipeline is not a training schedule.** "The corpus
+grows automatically" and "the model improves automatically" are different claims,
+and I conflated them when writing that note on 5/30.
+
+Result of absorbing it: corpus 1476→1581 chunks (113→124KB), vocab 3238→3510,
+params 695K→736K. strict +1 to 43, soul-strong 18/20, any-hit -1.
+
+**The stated risk did not materialise.** HYP87 flagged that weekly reports carry
+tickers (00631L/MSTR/QLD), HYP numbers and technical jargon that could dilute
+persona. +272 vocab tokens arrived and persona still gated 5/5. So the
+"authentic on-domain narrative" category survives its 4th confirmation — the
+distinguishing factor really is authorship, not vocabulary cleanliness.
+
+**bpb is not usable as an axis here.** 0.0444 vs HYP87's 0.0869 looks like a 2×
+win but is meaningless: WordTokenizer rebuilds the vocab from the corpus every
+run, so bits-per-byte is measured against a different tokenization each time.
+Recorded in state.json so a future tick doesn't mistake it for a real gain.
+
+### Open questions
+
+- **program.md §1 validation cmd points at a path that doesn't exist.** It says
+  `cd ~/nami-lm && pytest tests/` but nami-lm has no `tests/`; the suite lives in
+  `~/nami-backpack/projects/numpy-grad/tests/` (39 passed). Proposing the patch
+  here per §5.5 rather than silently editing the contract.
+- **program.md §2 says ≤90 min per HYP; train.py has `TIME_BUDGET = 240*60`.**
+  Reality drifted from the contract some time ago. Either the constraint should
+  be rewritten to 240 or the budget lowered. Flagging, not resolving.
+- Should the weekly feed get a standing retrain cadence (e.g. monthly) now that
+  we know accrual alone does nothing? A monthly absorb is ~2h and the data only
+  arrives 4-5 reports at a time. Revisit at the next reflection.

@@ -1,10 +1,10 @@
 # nami-lm — HYP backlog (priority order)
 
-> Refreshed 2026-05-30 (Opus 4.8). Phase 10/11/12 levers are exhausted;
-> deployed optimum = **HYP87 v0.5.1.0-weekly: strict 42/51, any-hit 50/51**,
-> 695K params (d96), vocab 3238, ~113KB persona-pure corpus.
+> Refreshed 2026-08-05 (Opus 5) after HYP89. Phase 10/11/12 levers are exhausted;
+> deployed optimum = **HYP89 v0.5.2.0-weekly-absorbed: strict 43/51, any-hit 49/51**,
+> 736K params (d96), vocab 3510, ~124KB persona-pure corpus.
 > Three lever families are SETTLED — see "Closed" below. The only paths to
-> >42 are (a) more authentic on-domain data, or (b) a regime change.
+> >43 are (a) more authentic on-domain data, or (b) a regime change.
 
 ## Live candidates (priority order)
 
@@ -42,9 +42,20 @@
 - **HYP44-48 (old "next up")** — all consumed in phase 10 (print-freq, cosine,
   batch, d_ff, probe alignment). Superseded by the phase-10/11/12 arc above.
 
-## Mechanism note
+## Mechanism note — CORRECTED 2026-08-05 by HYP89
 
-HYP87's weekly-REM-report feed means the corpus grows with authentic Nami
-narrative every Sunday REM pass automatically — the model "慢慢養" without a
-manual retrain decision. That is the standing low-cost growth path; no tick
-needs to force a retrain.
+HYP87's weekly-REM-report feed means the **corpus** grows with authentic Nami
+narrative every Sunday REM pass automatically.
+
+⚠️ **The 5/30 version of this note ended "no tick needs to force a retrain" —
+that was wrong and it cost 10 weeks.** The glob only decides what a retrain
+*would* ingest; it does not train anything. Between 2026-05-25 and 2026-08-05 no
+retrain ran, so six accrued reports sat unread (`data/phase0_qa.jsonl` still had
+a May 25 mtime) and the mechanism delivered zero benefit. HYP89 absorbed them:
+strict 42 → 43.
+
+**A data pipeline is not a training schedule.** Whenever
+`memory/weekly/` has grown by ~4+ reports since the last run, that IS a
+legitimate autonomous HYP — it is not a new lever, not gated, and it is the
+cheapest remaining source of strict gains. Check `ls -la data/phase0_qa.jsonl`
+against `ls ~/clawd/memory/weekly/` before concluding there is nothing to do.

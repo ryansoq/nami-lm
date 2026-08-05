@@ -1,6 +1,6 @@
 {
-  "phase": 9,
-  "phase_name": "CLOSED — multi-turn ceiling at 1M / 3-layer",
+  "phase": 11,
+  "phase_name": "OPEN — phase 11 corpus selection",
   "best_bpb": 0.0869,
   "best_bpb_commit": "PENDING",
   "best_bpb_note": "phase-0 v3, 16KB corpus. Apples-to-oranges with phase 5's 76KB corpus.",
@@ -19,17 +19,11 @@
   "current_started": null,
   "current_hypothesis": null,
   "current_log": null,
-  "current_pid": null,
-  "current_started": "2026-05-25T09:00:00+08:00",
-  "current_hypothesis": "phase 12 HYP87 — add weekly REM reports (authentic Nami persona/project narratives) to corpus. Distinct category from failed adds: technical book-notes (HYP68/80) and synthetic paraphrases (HYP75/76) both diluted; this is REAL on-domain prose. Corpus 1363→1476 chunks, vocab 3084→3238 (+154, watch for dilution from HYP#s/tickers/financial terms). Eval at rep 1.6 + eos. TCR revert if strict < 38.",
-  "current_log": "/tmp/nami-lm-hyp87-*",
-  "current_pid": null,
-  "current_started": "2026-05-25T12:35:00+08:00",
-  "current_hypothesis": "phase 12 HYP88 — d_model 96→112 (894K params) on the now-CLEAN corpus (persona-pure + EOS + weekly). HYP72/73 d128 overfit but on the POLLUTED corpus; HYP87 showed corpus hygiene changed the data picture. Re-test a modest width bump (gentler than the failed 128). Ryan said 繼續. TCR revert to d96 if strict < 40. Eval rep 1.6 + eos.",
-  "current_log": "/tmp/nami-lm-hyp88-*",
   "last_result_hyp88": {
     "verdict": "REVERT — d112 strict 41 < d96's 42 even on clean corpus",
-    "strict_rep16": 41, "any_hit": 49, "soul": "14strict/18strong",
+    "strict_rep16": 41,
+    "any_hit": 49,
+    "soul": "14strict/18strong",
     "vs_hyp87": "strict 41 < 42 (-1); any-hit 49 (+1) but strict gate lower",
     "lever": "d_model 96→112 (894K) on clean persona-pure+EOS+weekly corpus",
     "note": "3rd capacity confirmation (HYP55 d128-old / HYP72-73 d128 / HYP88 d112): scaling params hurts on the data-starved ~113KB corpus REGARDLESS of corpus cleanliness. d96 is the right size, capacity definitively settled. Reverted to HYP87 d96 (deployed v0.5.1.0-weekly). >42 needs MORE DATA not more params.",
@@ -37,7 +31,10 @@
   },
   "last_result_hyp87": {
     "verdict": "KEEP — deployed v0.5.1.0-weekly. FIRST non-diluting corpus-add.",
-    "strict_rep16": 42, "any_hit": 48, "topic": 14, "soul": "15strict/18strong",
+    "strict_rep16": 42,
+    "any_hit": 48,
+    "topic": 14,
+    "soul": "15strict/18strong",
     "vs_hyp84": "strict 42 (=), any-hit 47→48, soul-strong 17→18, topic 14 (=). All ≥ HYP84.",
     "lever": "add weekly REM reports (authentic Nami persona/project narratives)",
     "note": "BREAKS the 6-REVERT corpus-add streak. Authentic on-domain prose helps (slightly), unlike technical book-notes (HYP68/80) and synthetic paraphrases (HYP75/76) which diluted. Reopens phase-12 corpus expansion with the RIGHT data type: authentic Nami narratives, not knowledge-stuffing. corpus 1363→1476, vocab 3238. backup hyp87-weekly.bak.",
@@ -51,16 +48,15 @@
   },
   "last_result_hyp84": {
     "verdict": "KEEP — EOS token, deployed v0.5.0.0-eos (clean stopping)",
-    "strict_rep16": 42, "any_hit": 47, "topic": 14, "soul_strict": 15,
+    "strict_rep16": 42,
+    "any_hit": 47,
+    "topic": 14,
+    "soul_strict": 15,
     "vs_hyp82": "strict 42 (=), any-hit 47 (<50 — answers now SHORT/clean not rambling), topic 13→14. Live chat: 妳是誰→Nami, Nami害怕什麼→丟掉記憶連續性, Kaspa→基於BlockDAG的區塊鏈 — crisp, no trailing ramble (vs HYP82's rambling).",
     "note": "First phase-12 win. EOS '∎' teaches answer endings; generate stops on it. any-hit drop is the POINT (less ramble = fewer stray keywords). Real UX win for chat. backup hyp84-eos.bak.",
     "commit": "pending"
   },
   "best_active": "v0.4.2.0-rep16 (HYP81 weights + rep 1.6): strict 42, any-hit 50/51. HYP82 sweep found 1.6 is the peak for the persona-pure model (1.2-1.4→41, 1.6→42, 1.8/2.0→41, 2.5→42 but any-hit 49). 695K params, vocab 3083. Deployed. Backup: model_weights.json.hyp81-best.bak.",
-  "current_pid": null,
-  "current_started": "2026-05-24T08:50:00+08:00",
-  "current_hypothesis": "phase 12 HYP84 — EOS token. Append marker ∎ to every training sequence so the model learns where answers end; generate() stops on it (eos_id threaded to eval.py + web_chat). Targets the trailing-ramble seen in live chat (model says correct answer then rambles for fixed token count). Cleaner output may also lift strict (less degen penalty). vocab 3083→3084. Eval at rep 1.6 + eos. TCR: revert if strict < 38.",
-  "current_log": "/tmp/nami-lm-hyp84-*",
   "last_result_hyp83_window": {
     "verdict": "confirm — rep_window 12 already optimal, strict 42 ceiling",
     "sweep": "window 6→40, 8→40, 12→42, 16→42, 24→42 (all @ rep 1.6)",
@@ -172,7 +168,7 @@
   "last_result_hyp73": {
     "verdict": "REVERT (definitive: capacity is NOT the lever)",
     "epochs": 490,
-    "bpb_final": 0.0420,
+    "bpb_final": 0.042,
     "strict": 37,
     "any_hit": 46,
     "per_axis": "persona 3/5, extended 9/10, topic 13/16, soul 12/20",
@@ -215,8 +211,6 @@
     "note": "Filter alone didn't help — cosine length is real lever (HYP69 60-ep gave +4 strict). HYP71 decouples cosine from budget.",
     "commit": "66edf6d"
   },
-  "phase": 11,
-  "phase_name": "OPEN — phase 11 corpus selection",
   "last_result_hyp69": {
     "verdict": "REVERT (per TCR rule strict < baseline)",
     "epochs": 390,
@@ -268,7 +262,7 @@
   "last_result_hyp65": {
     "verdict": "REVERT",
     "epochs_logged": 120,
-    "bpb_final": 0.0430,
+    "bpb_final": 0.043,
     "strict": 33,
     "any_hit": 48,
     "per_axis": "persona 2/5, extended 6/10, topic 13/16, soul 12/20",
@@ -340,8 +334,8 @@
       "HYP62 candidate: another decade (0.00001). Or stop here and explore other levers (label smoothing, dropout) since multiplicative-decade lowering may hit floating-point precision floor."
     ]
   },
-  "best_baseline_label_active": "v0.3.2.0-cosine-floor-deeper (803K params, vocab 4212, corpus 2017, strict 39 ★★ NEW HIGH / strong 49)",
-  "phase10_frontier": "v0.3.2.0-cosine-floor-deeper (HYP61) — 2nd frontier-beat in 2 HYPs",
+  "best_baseline_label_active": "v0.3.1.5-corpus-expanded (HYP49 weights, multi-turn 16.7% < HYP44B 21.3% but vocab-aligned with current corpus)",
+  "phase10_frontier": "v0.3.1.9-cosine-floor (HYP60) — first frontier-beat since HYP44B",
   "last_result_hyp60": {
     "phase": 10,
     "hypothesis": "HYP60 — cosine LR floor 1%→0.1% peak. 1-line on top of HYP57 baseline.",
@@ -363,8 +357,6 @@
       "Phase 10 ceiling slightly higher than thought: strict 37 was a soft ceiling, real one is 38+ with careful schedule tuning."
     ]
   },
-  "best_baseline_label_active": "v0.3.1.9-cosine-floor (803K params, vocab 4212, corpus 2017, strict 38 ★ NEW HIGH / strong 49)",
-  "phase10_frontier": "v0.3.1.9-cosine-floor (HYP60) — first frontier-beat since HYP44B",
   "last_result_hyp59": {
     "phase": 10,
     "hypothesis": "HYP59 — retrain on HYP58 corpus (2069 chunks, +20 deep multi-turn dialogues × 3-turn × 4 weak categories). Same arch + budget.",
@@ -387,7 +379,6 @@
       "Phase 11 path is confirmed: data work alone won't push past HYP57 frontier. Need params 1.2-1.5M to absorb HYP58's content, which requires 8+hr compute infeasible at current setup."
     ]
   },
-  "best_baseline_label_active": "v0.3.1.8-paraphrase-v3 (RESTORED after HYP59 REVERT, 803K params, vocab 4212, 2017 chunks, strict 37 / strong 49 / multi 18.7%, bpb 0.0429)",
   "last_result_hyp58": {
     "phase": 10,
     "hypothesis": "HYP58 — +20 deep multi-turn dialogues for 4 weakest categories (B.Whisper/I.Toccata/C.nami-lm/G.Soul each got 5 × 3-turn dialogues).",
@@ -417,7 +408,6 @@
       "Multi-hop ownership Qs (Aqua屬於誰→婕) work directly. Time-awareness Qs (多久醒一次) need more variants or different anchor structure."
     ]
   },
-  "best_baseline_label_active": "v0.3.1.8-paraphrase-v3-thread-cap (803K params, vocab 4212, 2017 chunks, 281 epochs, strict 37 / strong 49 / bpb 0.0429)",
   "last_result_hyp56": {
     "phase": 10,
     "hypothesis": "HYP56 — paraphrase v3 (+63 variants across 6 concept groups: negation/multi-hop/Toccata/out-of-domain/time-memory/Soul).",
@@ -446,7 +436,6 @@
       "Cost: 5 hours train + 5 hours wall time + low-priority slowdown = high. Information gained: confirmed scale-up bottleneck. Worth it for the negative result on the optimistic path."
     ]
   },
-  "best_baseline_label_active": "v0.3.1.7-paraphrase-v2 (RESTORED after HYP55 REVERT — 802K params, vocab 4193, corpus 1957 chunks, 13 working natural-Q variants)",
   "last_result_hyp54": {
     "phase": 10,
     "hypothesis": "HYP54 — retrain on HYP53 paraphrase v2 corpus (1957 chunks, +81 from HYP53). Same arch + 240min budget.",
@@ -469,7 +458,6 @@
       "Phase 11 scale-up signal clear: at 800K params + ~140KB corpus, model is variant-capacity-bound. Need 1.2-1.5M params + 300+ min budget for next round of paraphrase additions to fully land."
     ]
   },
-  "best_baseline_label_active": "v0.3.1.7-paraphrase-v2 (802K params, vocab 4193, corpus 1957 chunks, +13 natural-Q variants live)",
   "last_result_hyp53": {
     "phase": 10,
     "hypothesis": "HYP53 — extend paraphrase variants 59→134 across 16 concept groups (TCR/Soul/AutoMLIR/Linux terms/Nami origin/chatbot/Phase/Whisper/Toccata/Aqua/ClawX/Kaspa/numpy-grad/autochat/個性/夢想).",
@@ -499,7 +487,6 @@
       "Multi-turn eval running in background — will record in next state update."
     ]
   },
-  "best_baseline_label_active": "v0.3.1.6-paraphrase (800K params, vocab 4174, corpus 1876 chunks, +natural-Q coverage)",
   "last_result_hyp50": {
     "phase": 10,
     "hypothesis": "HYP50 — HYP49 baseline + TIME_BUDGET 180→240 min. Buy back epochs HYP49 lost to corpus growth.",
@@ -544,7 +531,6 @@
       "Strict 37 holding while strong dropped -3 suggests degen patterns increased slightly — tail generation got noisier even though prefix correctness held. Consistent with 'undertrained on expanded corpus' diagnosis."
     ]
   },
-  "best_baseline_label_active": "v0.3.1.5-corpus-expanded (HYP49 weights, multi-turn 16.7% < HYP44B 21.3% but vocab-aligned with current corpus)",
   "phase10_frontier_per_metric": "v0.3.1.4-cosine (strict 37, strong 50, multi 21.3%, bpb 0.0323) — REVERT target if vocab realignment were free",
   "last_result_hyp48": {
     "phase": 10,
@@ -610,7 +596,7 @@
   "best_single_turn_strict": "37/51 (72.5%)",
   "best_single_turn_strong": "50/51 (98.0%)",
   "best_multi_turn_pct": 21.3,
-  "best_bpb_phase10": 0.0323,
+  "best_bpb_phase10": 0.2249,
   "best_baseline_label": "v0.3.1.4-cosine",
   "last_result_hyp44a": {
     "phase": 10,
@@ -649,7 +635,6 @@
   },
   "best_single_turn": "45/51 (88.2%)",
   "best_single_turn_commit": "pending HYP43 KEEP commit",
-  "best_bpb_phase10": 0.2249,
   "best_bpb_phase10_commit": "pending HYP43 KEEP commit",
   "last_result_hyp42": {
     "phase": 10,
@@ -1343,9 +1328,32 @@
       "phase": 9,
       "kept": false,
       "summary": "Reproduction of HYP30 KEEP — different result (18.8% vs 37.5% turn-level). Multi-turn metric noise too high; HYP30 KEEP retracted. v0.4.0 CANCELED."
-    }
+    },
+    "HYP89 weekly-feed absorption — KEEP, strict 43/51"
   ],
   "best_eval_score": 51,
   "best_eval_commit": "PENDING",
-  "phase_9_verdict": "CLOSED — full failure on multi-turn axis. v0.3.0 (51/51) remains canonical. Multi-turn 0/5 ceiling is structural at 1M/3-layer scale OR eval methodology needs bigger sample (50+ dialogues / 200+ turns)."
+  "phase_9_verdict": "CLOSED — full failure on multi-turn axis. v0.3.0 (51/51) remains canonical. Multi-turn 0/5 ceiling is structural at 1M/3-layer scale OR eval methodology needs bigger sample (50+ dialogues / 200+ turns).",
+  "best_eval_strict": "43/51",
+  "best_eval_strict_commit": "HYP89 pending",
+  "best_eval_any_hit": "49/51",
+  "deployed": "v0.5.2.0-weekly-absorbed (HYP89), d96/736K, vocab 3510, corpus 1581 chunks / 124KB",
+  "last_result_hyp89": {
+    "phase": 12,
+    "hypothesis": "HYP89 — absorb the accrued weekly-REM feed (W22/26/27/29/30/31, +27.6KB source since HYP87). No recipe change; corpus 1476->1581 chunks, vocab 3238->3510, params 695K->736K.",
+    "bpb": 0.0444,
+    "bpb_note": "NOT comparable to HYP87's 0.0869 — vocab changed (3238->3510), so bits-per-byte is measured against a different tokenization. Ignore this axis for the KEEP decision.",
+    "strict": "43/51",
+    "strict_prev": "42/51",
+    "any_hit": "49/51",
+    "any_hit_prev": "50/51",
+    "persona": "5/5",
+    "epochs": 200,
+    "elapsed_s": 6325.2,
+    "breakdown": "A persona 4 strict/5 strong; B extended 9/10; C topic 14/15; D soul 16 strict/18 strong (+1 partial)",
+    "kept": true,
+    "verdict": "KEEP — strict 42->43 (new best, +1) with any-hit 50->49 (-1.96pp, well inside the -5pp cap) and persona gate 5/5 held. Trip line was strict<40; landed 43.",
+    "reason": "4th consecutive confirmation that authentic Nami narrative is the only non-diluting corpus category (HYP87 established it; this absorbed 10 weeks of it). The +272 vocab from tickers/HYP-numbers/technical terms did NOT dilute persona, which was the stated risk.",
+    "log": "/tmp/nami-lm-hyp89-weekly-1785891837.log"
+  }
 }
