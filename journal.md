@@ -1101,3 +1101,73 @@ Recorded in state.json so a future tick doesn't mistake it for a real gain.
 - Should the weekly feed get a standing retrain cadence (e.g. monthly) now that
   we know accrual alone does nothing? A monthly absorb is ~2h and the data only
   arrives 4-5 reports at a time. Revisit at the next reflection.
+
+---
+
+## Open question (URGENT) — the strict metric penalises correct English answers [2026-08-05]
+
+**No HYP launched this tick.** Auditing why HYP89's 8 remaining probe failures
+looked wrong turned up a defect in the *measuring instrument*, and running a
+1.75h experiment judged by a broken ruler would be waste.
+
+`eval.py:_is_degenerate` (added HYP44A) has three rules, written to catch Chinese
+degeneration like 「的的的」/「的？的？」. Two of them are script-blind and fire
+constantly on ordinary Latin text:
+
+| probe | model answer | rule that fired | verdict |
+|---|---|---|---|
+| ClawX是什麼？ | `Claude Code的PTY包裝器` | bigram `de` twice ("Clau**de** Co**de**") | correct, marked degen |
+| Ryan投資哪些股票？ | `QQQ、QLD、VOO、SMH` | char-triple `QQQ` | correct ticker, marked degen |
+| Nami最愛的mode？ | `TCR test commit revert` | bigram `t ` twice | correct, marked degen |
+| TCR 是什麼？ | `test commit revert …` | bigram `t ` twice | correct, marked degen |
+
+Any English phrase with a repeated 2-char sequence trips it — that is most
+English. Diagnostic (scratchpad `degen_audit.py`, eval.py untouched), scoping
+both repetition rules to CJK characters and leaving the `？` rule alone:
+
+```
+A core persona   strict  4 ->  5   (of 5)
+B extended       strict  9 -> 10   (of 10)
+C topic          strict 14 -> 15   (of 16)
+D soul           strict 16 -> 18   (of 20)
+TOTAL            strict 43 -> 48   (of 51)
+```
+
+**Five of the eight remaining failures are the ruler, not the model.** Only three
+are genuine (SwiGLU expects the literal string `FFN`; 「Ryan 給 Nami 什麼」expects
+`messages`; one soul probe).
+
+### Why I did not just fix it
+
+program.md §2 freezes the eval set because moving goalposts invalidates prior
+runs (TVM Ansor lesson). Redefining `_is_degenerate` is a *bigger* goalpost move
+than adding probes — it re-bases every strict number since HYP44A, i.e. 45 HYPs
+of recorded history. That is Ryan's call, not an autonomous edit.
+
+### What this does and does not change
+
+- It does **not** make the model better. Same weights, same answers.
+- It does **not** invalidate past KEEP/REVERT decisions: every comparison was made
+  under the same biased detector, so the *relative* signal was mostly intact.
+- It **does** invalidate the absolute number and, more importantly, the narrative.
+  backlog.md says ">43 needs a regime change (instruction tuning)". If the real
+  figure is 48/51, the remaining headroom is 3 probes, two of which are
+  eval-substring narrowness rather than missing knowledge. **The "ceiling" we have
+  been planning a phase-13 rebuild around is substantially an artifact.**
+
+This is the second time this project mistook an instrument defect for a model
+ceiling — HYP44-77 chased a "strict-39 ceiling" that turned out to be greedy-argmax
+decoding. Same lesson, different instrument: **audit the measurement before
+designing around its limit.**
+
+### Options for Ryan
+
+1. Fix the detector, re-baseline strict from HYP89 forward, keep the old numbers
+   labelled `strict-v1` for history. Honest, one-time discontinuity.
+2. Keep it frozen, report both `strict-v1` and `strict-v2` side by side.
+3. Leave it entirely — accept the metric is conservative and keep optimising
+   against it.
+
+Recommendation: option 1. A metric that punishes the model for saying
+"Claude Code" is not measuring what we want, and phase-13 planning is currently
+being driven by its error.
