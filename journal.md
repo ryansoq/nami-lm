@@ -1171,3 +1171,38 @@ designing around its limit.**
 Recommendation: option 1. A metric that punishes the model for saying
 "Claude Code" is not measuring what we want, and phase-13 planning is currently
 being driven by its error.
+
+### RESOLVED same day — Ryan approved option A [2026-08-05 21:55]
+
+Ryan: 「照你想做的去做沒關係」. Implemented option A.
+
+- `_is_degenerate` → v2, both repetition rules scoped to CJK; the `？` rule
+  unchanged (it is script-independent and was never wrong).
+- `_is_degenerate_v1` retained verbatim and still evaluated, reported as
+  `strict_v1` in eval output and `strict_v1_total` in eval_summary, so the
+  HYP44A..HYP89 series stays continuous and auditable.
+- Re-baselined on the *same HYP89 weights* — no retrain:
+
+```
+📊 Strict:    48/51  (94.1%)  — headline, v2
+📊 Strict-v1: 43/51           — retired detector, history only
+📊 Any-hit:   49/51  (96.1%)
+```
+
+**strict and any-hit have now converged (48 vs 49).** That gap was the entire
+"knowledge is present but decoding is broken" signal this project has been
+chasing since HYP44. It is closed — not by improving the model, but by
+discovering that most of it was never real. Core persona is also now a clean
+5/5 strict, so the canonical gate passes on its own terms rather than by
+rounding.
+
+Backlog re-scoped: phase-13 instruction tuning was justified as "the unlock for
+>42 strict"; that justification is void because 42 was never the number. Added a
+new top item — audit what the remaining 3 failures are actually made of, since
+two look like probe narrowness (`SwiGLU` demands the literal string `FFN` while
+the model answers `gate(96→256) * silu`, which is strictly better). If they are
+all probe artifacts, nami-lm has saturated its frozen eval and the honest next
+move is a harder eval, not a bigger model.
+
+Open questions from the previous entry (program.md §1 validation path, §2 90min
+vs TIME_BUDGET 240min) remain open — unrelated to this, still awaiting a patch.

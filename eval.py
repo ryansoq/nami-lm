@@ -88,36 +88,74 @@ TOPIC_PROBES = [
 ]
 
 
-def _is_degenerate(completion: str) -> bool:
-    """HYP44A — detect degeneration patterns common at small scale.
+def _is_cjk(ch: str) -> bool:
+    """CJK Unified Ideographs. The repetition heuristics below are only
+    meaningful inside Chinese text — see _is_degenerate."""
+    return "一" <= ch <= "鿿"
 
-    Triggers when the model "knows the prefix but can't finish coherently",
-    Ryan's 5/13 feedback signal: "Nami是誰" → "厲害的的？" prefix-match passes
-    eval but is broken UX. A completion is degenerate if any of:
 
-    - Char immediately repeated 3+ times in first 12 chars ("的的的", "？？？")
-    - Mid-sentence "？" within first 8 chars (canonical answers don't end on
-      "？" that quickly — only Q-tokens, but those are stripped pre-encode)
-    - Same 2-char bigram repeats 2+ times in first 16 chars ("的AI的AI" ok
-      but "的？的？" or "錯誤錯誤" not)
-    """
+def _is_degenerate_v1(completion: str) -> bool:
+    """The original HYP44A detector. RETAINED FOR HISTORICAL COMPARISON ONLY —
+    every strict number from HYP44A through HYP89 was measured with this, and
+    `strict-v1` in the summary keeps that series continuous.
+
+    Do not use it to judge new runs: its two repetition rules are script-blind
+    and misfire on ordinary Latin text. See _is_degenerate for the analysis."""
     head = completion[:16]
     if not head:
         return True
-    # Char triple
     for i in range(len(head) - 2):
         if head[i] == head[i + 1] == head[i + 2]:
             return True
-    # Mid-sentence ?
     if "？" in head[1:8] or "?" in head[1:8]:
         return True
-    # Bigram repeat
     h12 = completion[:16]
     bigrams = [h12[i:i+2] for i in range(len(h12) - 1)]
     for i, bg in enumerate(bigrams):
         if bg in bigrams[i+2:]:
             return True
     return False
+
+
+def _is_degenerate(completion: str) -> bool:
+    """v2 (2026-08-05) — same three rules, repetition scoped to CJK.
+
+    Origin: HYP44A added this to catch "knows the prefix but can't finish
+    coherently" (Ryan's 5/13 signal: 「Nami是誰」→「厲害的的？」 passed a bare
+    prefix match but was broken UX). The Chinese patterns it targets are
+    「的的的」/「的？的？」/「錯誤錯誤」.
+
+    The bug (found 2026-08-05 auditing HYP89's 8 residual failures): the char-
+    triple and bigram-repeat rules never checked script, and a repeated 2-char
+    sequence is *normal* in Latin text. Real answers it was rejecting:
+
+        "Claude Code的PTY包裝器"   → bigram 'de' twice (Clau-de / Co-de)
+        "QQQ、QLD、VOO、SMH"        → char triple 'QQQ' (a ticker symbol)
+        "TCR test commit revert"   → bigram 't ' twice
+
+    Five of 51 probes were affected; strict was reading 43 where the model
+    actually earned 48. Fix: both repetition rules now require CJK characters.
+    The mid-sentence "？" rule is script-independent and is unchanged.
+
+    Verify with tools_degen_audit.py.
+    """
+    head = completion[:16]
+    if not head:
+        return True
+    # Char triple — CJK only ("的的的" is degeneration, "QQQ" is a ticker)
+    for i in range(len(head) - 2):
+        if head[i] == head[i + 1] == head[i + 2] and _is_cjk(head[i]):
+            return True
+    # Mid-sentence ? — script-independent, unchanged from v1
+    if "？" in head[1:8] or "?" in head[1:8]:
+        return True
+    # Bigram repeat — CJK only ("錯誤錯誤" is degeneration, "test " is English)
+    counts: dict[str, int] = {}
+    for i in range(len(head) - 1):
+        bg = head[i:i+2]
+        if len(bg) == 2 and _is_cjk(bg[0]) and _is_cjk(bg[1]):
+            counts[bg] = counts.get(bg, 0) + 1
+    return any(c >= 2 for c in counts.values())
 
 
 def _classify(completion: str, prefix: str) -> str:
@@ -134,11 +172,13 @@ def _classify(completion: str, prefix: str) -> str:
 
 
 def _run_probes(model, tok, probes, label, quiet=False):
-    """Returns (strict_count, strong_count, partial_count, miss_count, total).
+    """Returns (strict, strong, partial, miss, total, strict_v1).
 
-    'strong' = strict OR miss-degen (the old "any-hit-on-prefix" tier).
-    'strict' = strong AND not degenerate (the honest tier — HYP44A)."""
-    strict = strong = partial = miss = 0
+    'strong'    = strict OR miss-degen (the old "any-hit-on-prefix" tier).
+    'strict'    = strong AND not degenerate under the v2 detector.
+    'strict_v1' = same but under the retired v1 detector, so the HYP44A..HYP89
+                  series stays comparable. Reported, never used for decisions."""
+    strict = strong = partial = miss = strict_v1 = 0
     if not quiet:
         print(f"\n🔮 {label} ({len(probes)} probes):")
     for q, expected in probes:
@@ -154,6 +194,8 @@ def _run_probes(model, tok, probes, label, quiet=False):
         verdict = _classify(completion, expected)
         if verdict == "strict":
             strict += 1; strong += 1; mark = "✨"   # strict pass
+            if not _is_degenerate_v1(completion):
+                strict_v1 += 1
         elif verdict == "miss-degen":
             strong += 1; mark = "⚠️"               # prefix ok but degen
         elif verdict == "partial":
@@ -162,7 +204,7 @@ def _run_probes(model, tok, probes, label, quiet=False):
             miss += 1; mark = "❌"
         if not quiet:
             print(f"  {mark} {q!r} → {completion!r}  (expect '{expected}')")
-    return strict, strong, partial, miss, len(probes)
+    return strict, strong, partial, miss, len(probes), strict_v1
 
 
 # Soul layer probes (Phase 7) — inner narrative content from SOUL.md
@@ -214,14 +256,14 @@ def main():
               f"tokenizer={tok.vocab_size}; retrain")
         sys.exit(2)
 
-    p_x, p_s, p_p, p_m, p_n = _run_probes(model, tok, PERSONA_PROBES,
-                                          "A. Core persona", quiet)
-    e_x, e_s, e_p, e_m, e_n = _run_probes(model, tok, EXTENDED_PERSONA,
-                                          "B. Extended persona", quiet)
-    t_x, t_s, t_p, t_m, t_n = _run_probes(model, tok, TOPIC_PROBES,
-                                          "C. Topic recall", quiet)
-    s_x, s_s, s_p, s_m, s_n = _run_probes(model, tok, SOUL_PROBES,
-                                          "D. Soul layer", quiet)
+    p_x, p_s, p_p, p_m, p_n, p_v1 = _run_probes(model, tok, PERSONA_PROBES,
+                                                "A. Core persona", quiet)
+    e_x, e_s, e_p, e_m, e_n, e_v1 = _run_probes(model, tok, EXTENDED_PERSONA,
+                                                "B. Extended persona", quiet)
+    t_x, t_s, t_p, t_m, t_n, t_v1 = _run_probes(model, tok, TOPIC_PROBES,
+                                                "C. Topic recall", quiet)
+    s_x, s_s, s_p, s_m, s_n, s_v1 = _run_probes(model, tok, SOUL_PROBES,
+                                                "D. Soul layer", quiet)
 
     summary = {
         # strict = honest "answer doesn't degen", strong = old any-hit-on-prefix
@@ -234,6 +276,8 @@ def main():
         "soul_strict": s_x, "soul_strong": s_s, "soul_partial": s_p,
         "soul_total": s_n,
         "strict_total": p_x + e_x + t_x + s_x,
+        # HYP44A..HYP89 series, script-blind detector. History only.
+        "strict_v1_total": p_v1 + e_v1 + t_v1 + s_v1,
         "any_hit_total": (p_s + p_p + e_s + e_p + t_s + t_p + s_s + s_p),
         "all_total": p_n + e_n + t_n + s_n,
     }
@@ -251,8 +295,11 @@ def main():
         strict = summary["strict_total"]
         any_hit = summary["any_hit_total"]
         total = summary["all_total"]
+        strict_v1 = summary["strict_v1_total"]
         print(f"📊 Strict: {strict}/{total}  ({100.0*strict/total:.1f}%) "
-              f"— honest metric (HYP44A)")
+              f"— headline metric (v2 detector, 2026-08-05)")
+        print(f"📊 Strict-v1: {strict_v1}/{total}  — retired script-blind "
+              f"detector, HYP44A..HYP89 series (history only)")
         print(f"📊 Any-hit: {any_hit}/{total}  ({100.0*any_hit/total:.1f}%) "
               f"— legacy prefix-match")
         print("=" * 60)

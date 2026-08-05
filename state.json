@@ -1334,7 +1334,7 @@
   "best_eval_score": 51,
   "best_eval_commit": "PENDING",
   "phase_9_verdict": "CLOSED — full failure on multi-turn axis. v0.3.0 (51/51) remains canonical. Multi-turn 0/5 ceiling is structural at 1M/3-layer scale OR eval methodology needs bigger sample (50+ dialogues / 200+ turns).",
-  "best_eval_strict": "43/51",
+  "best_eval_strict": "48/51",
   "best_eval_strict_commit": "HYP89 pending",
   "best_eval_any_hit": "49/51",
   "deployed": "v0.5.2.0-weekly-absorbed (HYP89), d96/736K, vocab 3510, corpus 1581 chunks / 124KB",
@@ -1343,7 +1343,7 @@
     "hypothesis": "HYP89 — absorb the accrued weekly-REM feed (W22/26/27/29/30/31, +27.6KB source since HYP87). No recipe change; corpus 1476->1581 chunks, vocab 3238->3510, params 695K->736K.",
     "bpb": 0.0444,
     "bpb_note": "NOT comparable to HYP87's 0.0869 — vocab changed (3238->3510), so bits-per-byte is measured against a different tokenization. Ignore this axis for the KEEP decision.",
-    "strict": "43/51",
+    "strict": "43/51 (v1 detector, as recorded at reap time)",
     "strict_prev": "42/51",
     "any_hit": "49/51",
     "any_hit_prev": "50/51",
@@ -1354,6 +1354,10 @@
     "kept": true,
     "verdict": "KEEP — strict 42->43 (new best, +1) with any-hit 50->49 (-1.96pp, well inside the -5pp cap) and persona gate 5/5 held. Trip line was strict<40; landed 43.",
     "reason": "4th consecutive confirmation that authentic Nami narrative is the only non-diluting corpus category (HYP87 established it; this absorbed 10 weeks of it). The +272 vocab from tickers/HYP-numbers/technical terms did NOT dilute persona, which was the stated risk.",
-    "log": "/tmp/nami-lm-hyp89-weekly-1785891837.log"
-  }
+    "log": "/tmp/nami-lm-hyp89-weekly-1785891837.log",
+    "strict_v2": "48/51"
+  },
+  "best_eval_strict_note": "v2 detector (2026-08-05). Same HYP89 weights that read 43/51 under the retired script-blind v1 detector; no retrain, the ruler was fixed. strict_v1 kept in eval output for the HYP44A..HYP89 series.",
+  "best_eval_strict_v1": "43/51",
+  "metric_version": "strict-v2 (eval.py:_is_degenerate, CJK-scoped repetition rules)"
 }
