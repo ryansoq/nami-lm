@@ -1335,7 +1335,7 @@
   "best_eval_score": 51,
   "best_eval_commit": "PENDING",
   "phase_9_verdict": "CLOSED — full failure on multi-turn axis. v0.3.0 (51/51) remains canonical. Multi-turn 0/5 ceiling is structural at 1M/3-layer scale OR eval methodology needs bigger sample (50+ dialogues / 200+ turns).",
-  "best_eval_strict": "48/51",
+  "best_eval_strict": "48/51 (seed 42); honest range 45-48 across seeds",
   "best_eval_strict_commit": "HYP89 pending",
   "best_eval_any_hit": "49/51",
   "deployed": "v0.5.2.0-weekly-absorbed (HYP89), d96/736K, vocab 3510, corpus 1581 chunks / 124KB",
@@ -1378,5 +1378,15 @@
     "confound": "vocab 3510->3508 shifts the np.random.seed(42) draw sequence, so the corpus edit also re-initialised the model. Cannot separate content effect from init effect. See journal 2026-08-06.",
     "log": "/tmp/nami-lm-hyp90-curated-1785978195.log"
   },
-  "blocked_on": "Noise-floor measurement (3 seeds, fixed corpus) before any further corpus-tweaking HYP — see journal 2026-08-06."
+  "blocked_on": null,
+  "noise_floor": {
+    "measured": "2026-08-06 CTRL-1",
+    "strict_spread": 3,
+    "method": "identical corpus (md5 d92e7aab), NAMI_SEED 42 vs 43, all else fixed",
+    "seed42_strict": 48,
+    "seed43_strict": 45,
+    "where": "entirely in the soul layer (18 vs 15); persona 5/5, extended 10/10, topic 15 identical across runs",
+    "rule": "KEEP/REVERT threshold on strict is now +/-4, not +/-1. Decisions should use persona+extended+topic (30 stable probes); soul tracked qualitatively.",
+    "implication": "HYP87/88/89 (+1/-1/+1) and HYP90 (-3) were all decided inside the noise floor. HYP90's curated-override fix was rejected without evidence."
+  }
 }

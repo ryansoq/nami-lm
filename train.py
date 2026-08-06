@@ -415,7 +415,12 @@ PERSONA_PROBES = [
 
 def train(epochs: int = 200, lr: float = 0.002,
           time_budget: int | None = None):
-    np.random.seed(42)
+    # Seed is env-tunable so the noise floor can be measured without editing
+    # code. Default 42 = every HYP through HYP90. Changing ONLY this while
+    # holding the corpus fixed isolates initialisation sensitivity, which a
+    # corpus edit cannot do (a corpus edit changes vocab size → changes the
+    # embedding shape → shifts every subsequent draw from the same seed).
+    np.random.seed(int(os.environ.get("NAMI_SEED", "42")))
 
     print("=" * 60)
     print("🌊 nami-lm phase 0 trainer (numpy-grad backend)")
