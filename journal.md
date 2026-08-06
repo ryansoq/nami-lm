@@ -1206,3 +1206,69 @@ move is a harder eval, not a bigger model.
 
 Open questions from the previous entry (program.md §1 validation path, §2 90min
 vs TIME_BUDGET 240min) remain open — unrelated to this, still awaiting a patch.
+
+---
+
+## HYP90 — REVERT, and it exposed a measurement problem bigger than the HYP [2026-08-06]
+
+**REVERT. strict 48 → 45/51** (trip line was 46). Restored HYP89 weights/vocab/corpus
+from `*.pre-hyp90.bak`; re-eval confirms 48/51 back. Served model on :18807 never
+changed (it had HYP89 in memory), so no user-visible impact.
+
+### What the change was
+
+`synthesize_qa.py`'s PERSONA_QA/TOPIC_QA comments claimed "appended last so they win
+on collisions", but dedup is **first-seen**, so appending last made them *lose* to any
+scraped memory file with the same question. 7 curated answers were silently shadowed:
+
+- `SwiGLU是什麼？` curated 「FFN 變體…」 (exactly what the failing probe wants)
+  shadowed by a scraped 「gate(96→256) * silu(…)」
+- `nami-lm是什麼？` curated 「訓練自己的小夥伴」 shadowed by a stale status snippet
+  「維持 HYP87 strict 42 收斂，backlog.md 刷新成…」
+
+Fix applied SOUL_QA's existing override-on-collision pattern to both blocks.
+
+### It did what it was supposed to, and still lost
+
+Topic recall went 15 strict/15 strong → 15/16: **the SwiGLU probe went from a hard
+miss to a hit**, exactly as predicted. But Soul collapsed 18 → 15 (Whisper應該怎樣、
+Bob是誰、Nami是chatbot嗎 all regressed from passing to hard misses). Net −3.
+
+### The confound — this is the real finding
+
+`train.py:418` sets `np.random.seed(42)` **before** the model is constructed, so runs
+are reproducible. But the corpus edit changed vocab 3510 → 3508, which changes the
+embedding matrix shape, which shifts every subsequent draw from the RNG stream.
+
+**So a corpus edit is never a clean A/B — it silently re-initialises the whole model
+too.** 7 answers out of 1581 (0.4% of content) moved strict by 3 points. Either the
+content mattered that much, or init sensitivity is worth ±3, and this experiment
+cannot distinguish them.
+
+That question is not local to HYP90. It applies to every corpus-touching HYP in the
+history, and most of them were decided on ±1:
+
+- HYP87 KEEP on strict 41 → 42 (+1)
+- HYP88 REVERT on strict 41 (−1)
+- HYP89 KEEP on strict 42 → 43 (+1)
+
+**If the noise floor is ±3, none of those three decisions carried information.**
+
+### Open question — measure the noise floor before running another corpus HYP
+
+Design: hold the corpus fixed at HYP89's, run 3 trainings with seeds 42 / 43 / 44,
+eval each. The spread is the floor. Any future KEEP/REVERT threshold must sit outside
+it. Cost ~6h of CPU; it produces no model improvement, only the ability to trust every
+future result. Flagging for Ryan rather than burning 6h autonomously.
+
+Interim rule adopted: **do not launch further corpus-tweaking HYPs until the floor is
+known** — they cannot be evaluated. Non-corpus work (eval design, harder probes,
+tooling) is unaffected.
+
+### Process note against myself
+
+I reverted `synthesize_qa.py` with `git checkout -- <file>`, which
+[[feedback_no_git_checkout_for_temp_restore]] explicitly says never to do. It happened
+to be safe (the file was never staged, so index == HEAD == the target state) and
+`git status` confirms nothing leaked. But safe-by-luck is not method — the backup-copy
+路徑 was available and I should have used it.

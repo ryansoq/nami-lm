@@ -1329,7 +1329,8 @@
       "kept": false,
       "summary": "Reproduction of HYP30 KEEP — different result (18.8% vs 37.5% turn-level). Multi-turn metric noise too high; HYP30 KEEP retracted. v0.4.0 CANCELED."
     },
-    "HYP89 weekly-feed absorption — KEEP, strict 43/51"
+    "HYP89 weekly-feed absorption — KEEP, strict 43/51",
+    "HYP90 curated-block dedup priority — REVERT, strict 45/51 (confounded by vocab-driven init shift)"
   ],
   "best_eval_score": 51,
   "best_eval_commit": "PENDING",
@@ -1359,5 +1360,23 @@
   },
   "best_eval_strict_note": "v2 detector (2026-08-05). Same HYP89 weights that read 43/51 under the retired script-blind v1 detector; no retrain, the ruler was fixed. strict_v1 kept in eval output for the HYP44A..HYP89 series.",
   "best_eval_strict_v1": "43/51",
-  "metric_version": "strict-v2 (eval.py:_is_degenerate, CJK-scoped repetition rules)"
+  "metric_version": "strict-v2 (eval.py:_is_degenerate, CJK-scoped repetition rules)",
+  "last_result_hyp90": {
+    "phase": 12,
+    "hypothesis": "HYP90 — make curated PERSONA_QA/TOPIC_QA win dedup collisions (they were losing to scraped files under first-seen dedup).",
+    "strict": "45/51",
+    "strict_prev": "48/51",
+    "strict_v1": "40/51",
+    "any_hit": "46/51",
+    "any_hit_prev": "49/51",
+    "persona": "5/5",
+    "bpb": 0.0447,
+    "epochs": 200,
+    "breakdown": "topic 15 strict/16 strong (SwiGLU probe FIXED as predicted); soul 18->15 (Whisper/Bob/chatbot regressed)",
+    "kept": false,
+    "verdict": "REVERT — strict 45 < trip line 46. Restored from model_weights.json.pre-hyp90.bak; re-eval confirms 48/51.",
+    "confound": "vocab 3510->3508 shifts the np.random.seed(42) draw sequence, so the corpus edit also re-initialised the model. Cannot separate content effect from init effect. See journal 2026-08-06.",
+    "log": "/tmp/nami-lm-hyp90-curated-1785978195.log"
+  },
+  "blocked_on": "Noise-floor measurement (3 seeds, fixed corpus) before any further corpus-tweaking HYP — see journal 2026-08-06."
 }
