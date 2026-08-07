@@ -1330,15 +1330,16 @@
       "summary": "Reproduction of HYP30 KEEP — different result (18.8% vs 37.5% turn-level). Multi-turn metric noise too high; HYP30 KEEP retracted. v0.4.0 CANCELED."
     },
     "HYP89 weekly-feed absorption — KEEP, strict 43/51",
-    "HYP90 curated-block dedup priority — REVERT, strict 45/51 (confounded by vocab-driven init shift)"
+    "HYP90 curated-block dedup priority — REVERT, strict 45/51 (confounded by vocab-driven init shift)",
+    "HYP91 dialogue collision guard — KEEP, stable axis 46/47"
   ],
   "best_eval_score": 51,
   "best_eval_commit": "PENDING",
   "phase_9_verdict": "CLOSED — full failure on multi-turn axis. v0.3.0 (51/51) remains canonical. Multi-turn 0/5 ceiling is structural at 1M/3-layer scale OR eval methodology needs bigger sample (50+ dialogues / 200+ turns).",
-  "best_eval_strict": "48/51 (seed 42); honest range 45-48 across seeds",
+  "best_eval_strict": "48/51 (seed 42) — but use the stable axis for decisions",
   "best_eval_strict_commit": "HYP89 pending",
   "best_eval_any_hit": "49/51",
-  "deployed": "v0.5.2.0-weekly-absorbed (HYP89), d96/736K, vocab 3510, corpus 1581 chunks / 124KB",
+  "deployed": "v0.5.3.0-dlgclean (HYP91), d96/736K, vocab 3510, corpus 1557 chunks / 116KB",
   "last_result_hyp89": {
     "phase": 12,
     "hypothesis": "HYP89 — absorb the accrued weekly-REM feed (W22/26/27/29/30/31, +27.6KB source since HYP87). No recipe change; corpus 1476->1581 chunks, vocab 3238->3510, params 695K->736K.",
@@ -1390,5 +1391,20 @@
     "implication": "HYP87/88/89 (+1/-1/+1) and HYP90 (-3) were all decided inside the noise floor. HYP90's curated-override fix was rejected without evidence.",
     "REVISED_2026-08-07": "NOT intrinsic noise. The +/-3 spread is exactly 3 soul probes whose question string differs from the training question by whitespace only (Whisper應該怎樣？ vs Whisper 應該怎樣？ etc). WordTokenizer makes whitespace a token boundary, so the model is asked an unseen sequence and must generalise; init decides the coin flip. The 16 exact-match soul probes score 15/16 in BOTH seeds — deterministic, zero spread.",
     "hyp90_reassessed": "neutral, not harmful: 30->30 on the stable set (fixed SwiGLU, lost mmt4d); its -3 was the 3 coin-flip probes"
+  },
+  "best_stable_axis": "46/47 (persona 5 + extended 10 + topic 15 + soul_in_dist 16)",
+  "last_result_hyp91": {
+    "phase": 12,
+    "hypothesis": "HYP91 — close the hole in HYP13's dialogue collision guard (first turn emitted 'X？？' so exact-match never caught the canonical 'X？').",
+    "stable_axis": "46/47",
+    "stable_axis_prev": "45/47",
+    "breakdown": "persona 5/5, extended 10/10, topic 15/16 (SwiGLU still fails — that fix was HYP90's curated override, a different lever), soul_in_dist 16/16 (was 15/16)",
+    "soul_paraphrase": "2/4 (was 3/4) — tracked only, coin-flip axis, excluded from the decision by the rule adopted 2026-08-06 BEFORE this run",
+    "strict_51": "48/51 (unchanged from HYP89, but composition differs: Ryan給Nami now passes, two paraphrase probes now fail)",
+    "kept": true,
+    "verdict": "KEEP — stable axis 45->46, prediction was 46 and the mechanism matched (the messages-vs-trust conflict on 「Ryan 給 Nami 什麼？」 resolved). Trip line was <44.",
+    "clean_ab": "vocab stayed 3510 and params 736320, identical to HYP89, so the RNG stream was NOT shifted. First properly controlled corpus experiment in the project.",
+    "bonus": "「Nami害怕掉記憶怎麼辦？」 went from garbage to a substantively correct answer 「把重要的寫進memory檔 文字大於腦袋」 (scores partial only because the corpus writes it with spaces)",
+    "log": "/tmp/nami-lm-hyp91-dlgcollide-1786107779.log"
   }
 }

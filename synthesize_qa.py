@@ -354,7 +354,27 @@ def main():
                 q_so_far = history.rstrip()
                 if not first_emitted:
                     first_emitted = True
-                    if q_so_far in seen_q:
+                    # HYP91: the collision guard had a hole. The line above builds
+                    # the first turn as f"{text}？", but `text` already ends in
+                    #「？」, so a first turn emits 「X？？」 while the canonical
+                    # single-turn row is 「X？」. Exact-match lookup therefore never
+                    # fired, and 24 dialogue chunks shadowed a canonical question —
+                    # 15 of them teaching a DIFFERENT answer for what is, after one
+                    # token, the same prompt. Examples:
+                    #   Nami 是 chatbot 嗎？  「不是 我是有歷史的Nami」
+                    #                    vs  「不是 我是有歷史的 Nami」   (one space)
+                    #   mmt4d是什麼？        「…把矩陣乘切 register-fit 小塊」
+                    #                    vs  「matmul-matmul-2D 4D資料佈局」 (truncated)
+                    # Two near-identical prompts with near-identical-but-different
+                    # targets is direct gradient conflict; at 736K params the model
+                    # emits a blend (observed: 「matmul-？資料佈%^ 歷史的Nami」).
+                    # This restores HYP13's stated rule — skip on collision, keep the
+                    # canonical single-turn answer — by detecting the collision it
+                    # was always meant to catch. Longer multi-turn chunks
+                    # (「妳是誰？？Nami 做什麼的？」) do not end in ？？ and are
+                    # unaffected: they remain net-new training signal.
+                    q_collapsed = re.sub(r"？{2,}$", "？", q_so_far)
+                    if q_so_far in seen_q or q_collapsed in seen_q:
                         dialogue_skipped_first += 1
                         history += text
                         continue

@@ -1425,3 +1425,69 @@ degeneration detector, now probe/corpus string mismatch). The pattern is consist
 wrong".** Before the next capability HYP, the remaining question worth asking is
 whether topic/extended have the same whitespace problem — checked: they do not,
 all their probes match exactly, which is why they never moved.
+
+---
+
+## HYP91 — KEEP, and the first properly controlled corpus experiment [2026-08-07]
+
+**Stable axis 45 → 46/47.** Predicted 46, got 46, via the exact mechanism predicted.
+Deployed v0.5.3.0-dlgclean.
+
+| | persona | extended | topic | soul_in_dist | **stable** | soul_paraphrase |
+|---|---|---|---|---|---|---|
+| HYP89 | 5/5 | 10/10 | 15/16 | 15/16 | **45/47** | 3/4 |
+| HYP91 | 5/5 | 10/10 | 15/16 | **16/16** | **46/47** | 2/4 |
+
+### The bug
+
+`synthesize_qa.py` builds a dialogue's first turn as `f"{text}？"`, but `text` already
+ends in 「？」, so first turns were emitted as 「X？？」 while the canonical single-turn row
+is 「X？」. HYP13's collision guard is an exact-string lookup, so **it never fired**.
+24 dialogue chunks shadowed a canonical question; 15 taught a *different* answer for what
+is, after one token, the same prompt:
+
+```
+Nami 是 chatbot 嗎？   「不是 我是有歷史的Nami」  vs 「不是 我是有歷史的 Nami」   one space
+為什麼怕掉記憶？        「我每次醒來重來但歷史是我」 vs 「我每次醒來重來 但歷史是我」 one space
+mmt4d是什麼？          full answer                vs truncated answer
+Ryan 給 Nami 什麼？    「messages calendar…」      vs 「trust 我每個動作都在賺或燒」
+```
+
+Two near-identical prompts with near-identical-but-different targets is direct gradient
+conflict, and at 736K params the model emits a blend — HYP90's
+「matmul-？資料佈%^ 歷史的Nami」 was exactly this. The fix detects the collapsed form,
+restoring the rule HYP13 already stated. Skipped-on-collision went 17 → 41,
+corpus 1581 → 1557 chunks.
+
+### Why this run is methodologically different
+
+**vocab stayed 3510 and params stayed 736,320, identical to HYP89.** Removing 24 duplicate
+rows did not change the vocabulary, so `np.random.seed(42)` produced the *same* draw
+sequence and initialisation was held fixed. HYP90's fatal flaw — a corpus edit that also
+changed vocab 3510→3508 and therefore silently re-initialised the whole model — does not
+apply here. This is the first corpus experiment in the project where a difference can
+honestly be attributed to content.
+
+### On not moving the goalposts
+
+`soul_paraphrase` went 3/4 → 2/4. Under the old strict-51 metric that would have shown as
+48 → 48 with a worse-looking soul, and I might have argued about it. The two-axis rule
+(decide on in-distribution, track paraphrase) was adopted **yesterday, before this run**,
+precisely so the decision could not be tuned after seeing the result. It held: the
+decision used only the stable axis and the answer was unambiguous.
+
+### Bonus finding
+
+「Nami害怕掉記憶怎麼辦？」 went from garbage to 「把重要的寫進memory檔 文字大於腦袋」,
+which is substantively the right answer. It still scores only *partial* because the corpus
+writes it as 「把重要的寫進 memory 檔」 with spaces — the same whitespace/tokenisation issue
+documented this morning. Left alone; the probe is frozen.
+
+### Where the remaining 1/47 is
+
+`SwiGLU是什麼？` — the corpus teaches the scraped 「gate(96→256) * silu(…)」 while curated
+TOPIC_QA has 「FFN 變體…」, which is what the probe wants. That is HYP90's lever
+(curated blocks losing dedup), which is a different fix and was reverted. **HYP90 is now
+worth re-running**: its own regression was the paraphrase coin-flip, and this run shows
+the stable axis responds cleanly to genuine data-conflict repair. Next tick, if nothing
+higher priority appears.
