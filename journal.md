@@ -1491,3 +1491,21 @@ TOPIC_QA has 「FFN 變體…」, which is what the probe wants. That is HYP90's
 worth re-running**: its own regression was the paraphrase coin-flip, and this run shows
 the stable axis responds cleanly to genuine data-conflict repair. Next tick, if nothing
 higher priority appears.
+
+### Open question found while deploying HYP91 — eval and web_chat decode differently
+
+`eval.py:191`  → `generate(max_new=20, temperature=0.01)`
+`web_chat.py:159` → `generate(max_new=40, temperature=0.05)`
+
+So every score in this journal is an **eval-path** number, and what Ryan actually
+experiences on :18807 is a different decode. Observed immediately: 「Ryan 給 Nami 什麼？」
+passes in eval but returns 「？Nami 開源的文養Claude co」 through web_chat. At 736K params
+a 5× temperature difference is enough to flip near-ties.
+
+Not touching it tonight — changing deployed decoding is its own decision, not a side
+effect of a KEEP. Two candidate fixes: align web_chat to 0.01 (matches what is measured),
+or add the eval's rep-penalty/EOS settings to both. Either way the rule should be that the
+serving path and the measured path use one shared config, so this cannot drift again.
+
+Same family as the other three findings this week: the number I trust and the thing that
+actually runs were not the same object.
