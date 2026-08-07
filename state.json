@@ -1386,7 +1386,9 @@
     "seed42_strict": 48,
     "seed43_strict": 45,
     "where": "entirely in the soul layer (18 vs 15); persona 5/5, extended 10/10, topic 15 identical across runs",
-    "rule": "KEEP/REVERT threshold on strict is now +/-4, not +/-1. Decisions should use persona+extended+topic (30 stable probes); soul tracked qualitatively.",
-    "implication": "HYP87/88/89 (+1/-1/+1) and HYP90 (-3) were all decided inside the noise floor. HYP90's curated-override fix was rejected without evidence."
+    "rule": "Report soul as two axes: soul_in_dist (16 exact-match probes, deterministic, use for decisions) and soul_paraphrase (4 probes, coin flip, track only). Probe strings NOT edited — program.md §2 freeze respected.",
+    "implication": "HYP87/88/89 (+1/-1/+1) and HYP90 (-3) were all decided inside the noise floor. HYP90's curated-override fix was rejected without evidence.",
+    "REVISED_2026-08-07": "NOT intrinsic noise. The +/-3 spread is exactly 3 soul probes whose question string differs from the training question by whitespace only (Whisper應該怎樣？ vs Whisper 應該怎樣？ etc). WordTokenizer makes whitespace a token boundary, so the model is asked an unseen sequence and must generalise; init decides the coin flip. The 16 exact-match soul probes score 15/16 in BOTH seeds — deterministic, zero spread.",
+    "hyp90_reassessed": "neutral, not harmful: 30->30 on the stable set (fixed SwiGLU, lost mmt4d); its -3 was the 3 coin-flip probes"
   }
 }

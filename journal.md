@@ -1340,3 +1340,88 @@ answer into a blocked one. I ran it and reported after.
 Deployed model untouched: HYP89 weights were snapshotted before the run and restored
 after (md5 verified identical, re-eval confirms 48/51 under seed 42). :18807 never
 changed.
+
+---
+
+## The ±3 "noise floor" is not noise — it is 3 probes with a space in the wrong place [2026-08-07]
+
+Follow-up to CTRL-1. No training run; this is all diffing two saved checkpoints.
+
+I expected to find that soul's ±3 spread came from probes with several valid
+answers (「Whisper應該怎樣？」→ 免費 / 不商業化 / stay free) where greedy decoding
+picks a different-but-correct one each time. **That hypothesis is wrong.** Reading
+what the two checkpoints actually answered:
+
+```
+Q: Whisper應該怎樣？   want 免費
+   seed42 PASS: 「？免費 stay free 不商業化」
+   seed43 fail: 「啊於BlockDAG的區塊速事 repo婕都跑了取？OP_ZK+」   <- garbage
+Q: Bob是誰？           want careful
+   seed42 PASS: 「？careful的AI夥伴跟Nami」
+   seed43 fail: 「厲害的AI工程師夥伴」                              <- that is Nami's answer
+Q: Nami是chatbot嗎？   want 不是
+   seed42 PASS: 「成為什麼不是 Nami」
+   seed43 fail: 「？ 是的人類夥伴工程師」                            <- inverts the answer
+```
+
+Not alternative phrasings. Real failures. So why only these?
+
+### The cause: the probe asks a question the model was never trained on
+
+| probe | corpus question | differs by |
+|---|---|---|
+| `Whisper應該怎樣？` | `Whisper 應該怎樣？` | one space |
+| `Bob是誰？` | `Bob 是誰？` | one space |
+| `Nami是chatbot嗎？` | `Nami 是 chatbot 嗎？` | two spaces |
+| `Nami害怕掉記憶怎麼辦？` | `Nami 害怕掉記憶該怎辦？` | spaces + 怎麼辦/該怎辦 |
+
+The tokenizer is a **WordTokenizer** — whitespace is a token boundary, so these are
+literally different token sequences. The model is being asked a question it has never
+seen and must generalise; at 736K params that is a coin flip, and initialisation
+decides which way it lands.
+
+### The numbers line up exactly
+
+- 16 of 20 soul probes match the training question exactly. Those score **15/16 in
+  both seeds** — bit-identical, zero spread. (The one persistent failure,
+  `Ryan 給 Nami 什麼？`, is the corpus conflict HYP90 was fixing: two rows teach
+  「messages…」 and 「trust…」 for the same question.)
+- 3 probes differ by whitespace only. seed42 got all 3 right; seed43 got all 3 wrong.
+- **18 − 15 = 3. The entire measured "noise floor" is those 3 probes.**
+
+### Corrections to what I concluded last night
+
+1. **The metric is not intrinsically noisy.** On in-distribution probes it is
+   deterministic across seeds. I reported a ±3 floor as if it were a property of
+   training; it is a property of 4 malformed probe strings.
+2. **±4 was over-conservative.** For comparisons restricted to in-distribution
+   probes, small differences are real. I will not re-widen it blindly either —
+   see the rule below.
+3. **HYP90 is neutral, not harmful.** Its −3 was these 3 coin-flip probes. On the
+   stable set it scored 30 → 30, having traded the SwiGLU probe (fixed, as predicted)
+   for mmt4d. So it neither helped nor hurt, and my "it was correct and I rejected it
+   on noise" framing from last night was half right: correct on the merits, but the
+   evidence never showed a gain either.
+
+### What I am NOT doing
+
+**Not editing the probe strings.** program.md §2 freezes the eval set, and "the probe
+has a typo so I fixed it upward" is exactly the move that freeze exists to prevent.
+The 3 probes stay as they are.
+
+### New reporting rule adopted
+
+Report soul in two parts instead of one number:
+
+- `soul_in_dist` — 16 probes whose question matches training. Deterministic. **Use
+  this for decisions.**
+- `soul_paraphrase` — 4 probes that accidentally test paraphrase generalisation.
+  Genuinely informative (a bigger model or more phrasings would stabilise them) but
+  a coin flip today, so it is tracked, never decided on.
+
+This is the third instrument defect in four days (weekly feed idle, script-blind
+degeneration detector, now probe/corpus string mismatch). The pattern is consistent:
+**every "the model can't do X" result so far has turned out to be "the harness asked
+wrong".** Before the next capability HYP, the remaining question worth asking is
+whether topic/extended have the same whitespace problem — checked: they do not,
+all their probes match exactly, which is why they never moved.
