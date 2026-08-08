@@ -1509,3 +1509,77 @@ serving path and the measured path use one shared config, so this cannot drift a
 
 Same family as the other three findings this week: the number I trust and the thing that
 actually runs were not the same object.
+
+---
+
+## CORRECTION — last night's decode diagnosis was wrong. It is whitespace, again. [2026-08-08]
+
+Last night I wrote that eval and web_chat disagree because of `temperature` (0.01 vs
+0.05), and I told Ryan that on Telegram. **That was wrong.** I asserted a cause from
+reading two call sites instead of testing it.
+
+Tested this morning — same model, same prompts, only temperature varied:
+
+```
+0/6 prompts differ purely from temperature 0.01 vs 0.05
+```
+
+Byte-identical. `max_new` (20 vs 40) only changes length, and the shared `rep_penalty`
+already comes from `NAMI_REP_PENALTY` by design. So the decode settings were never the
+problem.
+
+### The real cause
+
+`web_chat.chat()` runs the input through `_normalize()`, which since HYP45b (2026-05-13)
+**strips all inter-token whitespace**:
+
+```
+Ryan 給 Nami 什麼？  →  Ryan給Nami什麼？
+```
+
+The corpus teaches the spaced form. So web_chat was converting a question the model knows
+into one it has never seen — **the same whitespace/tokenisation failure documented
+yesterday for the eval's paraphrase probes, mirrored.** eval fails on 4 probes written
+*without* spaces where the corpus has them; web_chat failed on every corpus question
+written *with* spaces, because it removed them.
+
+Measured: **866 of 1556 corpus questions (56%) contain inter-token whitespace.** The
+normalizer was breaking all of them.
+
+### Why the fix inverted
+
+HYP45b was correct when written. Ryan's 5/13 screenshot showed 「Ryan 是誰？」 returning
+garbage while 「Ryan是誰？」 was canonical — because in May the corpus was mostly unspaced.
+Since then SOUL_QA and DIALOGUES added spaced forms and the corpus flipped to 56% spaced.
+**The corpus moved; the normalizer did not.** A fix that was right for the data of its day
+became a bug when the data changed underneath it, silently, with no test pinning the
+assumption.
+
+### Fix
+
+`_pick_prompt()` asks the corpus instead of guessing: try the spaced form, try the
+de-spaced form, use whichever the model has actually seen; fall back to de-spacing only
+when neither is known (still the better prior for genuinely OOD input, preserving HYP45b's
+original win). No retrain, serving-side only.
+
+Verified end to end against the live endpoint:
+
+```
+Ryan 給 Nami 什麼？   ？Nami 開源的文養Claude co    →  messages calendar Kaspa wallet 朋友 code
+Bob 是誰？            (garbage)                   →  careful reviewer 永遠要謹慎版本的人
+Nami 是 chatbot 嗎？  (garbage)                   →  ？不是 我為婕的AI夥伴 memory工程師
+Ryan 是誰？           Nami的人類夥伴工程師           →  unchanged (HYP45b path still taken)
+```
+
+### The lesson I keep re-learning
+
+Fifth instrument finding this week, and the second where **I named a cause without testing
+it**. Reading two call sites and spotting a plausible difference is a hypothesis, not a
+diagnosis. The test cost 90 seconds and overturned the answer. Journal and TG both carried
+the wrong claim overnight because I skipped it.
+
+Also worth recording separately: this is the third distinct bug caused by whitespace and a
+word-level tokenizer (paraphrase probes, dialogue `？？` collisions, now the normalizer).
+**The underlying disease is that the corpus is inconsistent about spacing.** Normalising
+the corpus itself is the real fix; everything else is compensation at the edges. Logged as
+the next structural candidate.

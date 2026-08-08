@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import re
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -85,12 +86,13 @@ def _normalize(text: str) -> str:
     # "Ryan是誰？" returned canonical. WordTokenizer treats " " as a separate
     # char-level token, shifting position embeddings by one — small model is
     # brittle to this. Strip the space so both forms tokenize identically.
-    import re
-    # Strip ALL inter-token whitespace: CJK-CJK, CJK-Latin, Latin-CJK,
-    # CJK-digit. Word-level tokenizer treats " " as a separate token which
-    # shifts positions and breaks tiny model's brittle context.
-    out = re.sub(r"([A-Za-z0-9一-鿿])\s+([A-Za-z0-9一-鿿])", r"\1\2", out)
-    out = re.sub(r"([A-Za-z0-9一-鿿])\s+([A-Za-z0-9一-鿿])", r"\1\2", out)  # 2nd pass for overlapping
+    # 2026-08-08: whitespace stripping is now CONDITIONAL — see _despace() and
+    # _pick_prompt(). HYP45b stripped unconditionally, which was right in May 2026
+    # when the corpus was mostly unspaced, but the corpus has since shifted to
+    # 56% spaced (866 of 1556 questions). Stripping unconditionally converted a
+    # question the model KNOWS into one it has never seen — the exact failure
+    # mode documented for the eval's paraphrase probes on 2026-08-07, just in
+    # the opposite direction.
     # Strip trailing tone particles: ...XX啊？ → ...XX？; ...XX啊 → ...XX
     # Iterate so multi-particle ('呢啊') gets fully cleaned.
     PARTICLES = "啊喔哦喲呀唉呢嗯耶嘿"
@@ -104,6 +106,55 @@ def _normalize(text: str) -> str:
         if not changed:
             break
     return out
+
+
+_CORPUS_Q = None
+
+
+def _known_questions() -> set:
+    """Questions the model was actually trained on, read once from the corpus.
+
+    Used to decide whether whitespace stripping helps or hurts for a given
+    input, instead of guessing. Failure is non-fatal: an empty set makes
+    _pick_prompt fall back to the old unconditional-strip behaviour."""
+    global _CORPUS_Q
+    if _CORPUS_Q is None:
+        _CORPUS_Q = set()
+        try:
+            with open(NAMI_LM / "data" / "phase0_qa.jsonl", encoding="utf-8") as f:
+                for line in f:
+                    _CORPUS_Q.add(json.loads(line)["q"])
+        except Exception as e:                                  # noqa: BLE001
+            print(f"⚠️  could not read corpus questions ({e}); "
+                  f"falling back to unconditional de-spacing", flush=True)
+    return _CORPUS_Q
+
+
+def _despace(text: str) -> str:
+    """HYP45b's original transform: drop whitespace between word characters."""
+    out = re.sub(r"([A-Za-z0-9一-鿿])\s+([A-Za-z0-9一-鿿])", r"\1\2", text)
+    return re.sub(r"([A-Za-z0-9一-鿿])\s+([A-Za-z0-9一-鿿])", r"\1\2", out)
+
+
+def _pick_prompt(q: str) -> str:
+    """Choose between the spaced and de-spaced form by asking the corpus.
+
+    A word-level tokenizer makes 「Bob 是誰？」 and 「Bob是誰？」 different token
+    sequences, so exactly one of them is usually in-distribution. Which one
+    depends on how that particular corpus row happens to be written, and the
+    corpus is inconsistent (56% spaced). So: try both, prefer whichever the
+    model has actually seen. Only when neither is known do we fall back to
+    de-spacing, which is still the better prior for genuinely unseen input
+    (Ryan's 5/13 screenshot: spaced OOD input produced garbage)."""
+    known = _known_questions()
+    stripped = _despace(q)
+    if not known:
+        return stripped
+    if q in known:
+        return q
+    if stripped in known:
+        return stripped
+    return stripped
 
 
 def _trim_degen(answer: str) -> str:
@@ -152,7 +203,7 @@ def _trim_answer(answer: str) -> str:
 
 def chat(question: str) -> str:
     _load_model()
-    q = _normalize(question).rstrip("?？") + "？"
+    q = _pick_prompt(_normalize(question).rstrip("?？") + "？")
     ids = _TOK.encode(q)
     if not ids:
         return "（這個問題的字我還沒學會，問點別的？）"
