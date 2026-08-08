@@ -1583,3 +1583,65 @@ word-level tokenizer (paraphrase probes, dialogue `？？` collisions, now the n
 **The underlying disease is that the corpus is inconsistent about spacing.** Normalising
 the corpus itself is the real fix; everything else is compensation at the edges. Logged as
 the next structural candidate.
+
+---
+
+## PAUSED [2026-08-08 22:59]
+
+Ryan on Telegram: 「現在先不用跑 llm_nami相關 先記憶然後暫停」. Recording state, then
+stopping. `STOP` file created — program.md §5.4 step 1 halts every future tick until it
+is deleted.
+
+### What is running: nothing
+
+- HYP92 was killed at **ep 170/200** (bpb 0.0461). Not evaluated, not deployed.
+- No train.py process alive (verified with `pgrep -fa python.*train.py`).
+
+### What is deployed and safe
+
+**v0.5.3.0-dlgclean (HYP91)** on :18807, stable axis **46/47**.
+`model_weights.json` md5 verified identical to `model_weights.json.hyp91-best.bak` —
+the killed run never reached its save step, so the served model was never touched.
+
+### A hazard I had to remove before stopping
+
+HYP92's change lives in `train.py:WordTokenizer._tokenize`, and **web_chat imports
+WordTokenizer from train.py**. Leaving it in the working tree meant the next web_chat
+restart would de-space at encode time while serving a model trained *without*
+de-spacing — a silent tokenizer/weights mismatch, and exactly the class of bug this week
+was spent hunting. The currently-running web_chat is fine (it loaded the old module at
+09:2x), but "fine until someone restarts it" is not safe to leave behind.
+
+So: the change is saved as `paused/hyp92-tokenizer-despace.patch` and `train.py` is back
+to the committed state. Verified after reverting: `encode('Bob 是誰？') != encode('Bob是誰？')`
+and vocab 3510 — consistent with the deployed weights.
+
+### To resume
+
+```bash
+cd ~/nami-lm
+rm STOP
+git apply paused/hyp92-tokenizer-despace.patch
+PYTHONPATH=~/nami-backpack/projects/numpy-grad python3 -u train.py    # ~1.75h, 200 ep
+```
+
+HYP92's pre-launch measurements are already done and recorded (vocab delta 0 → clean A/B;
+digits preserved; probes matching corpus 46/51 → 50/51; tokens −9.9%). The hypothesis,
+prediction and trip line are in `state.json:current_hypothesis` — read that before
+re-running rather than re-deriving it.
+
+Its **primary claim is determinism, not score**: the 4 paraphrase probes should stop
+being coin flips. Testing that needs two seeds (`NAMI_SEED=42` and `43`) on the same
+corpus and a comparison of *which answers* they give, not just the totals — the tool for
+that is already written: `tools_soul_variance.py`.
+
+### Open items parked
+
+1. `SwiGLU是什麼？` — the last stable-axis miss. Fix is HYP90's curated-block override
+   (`paused/` does not contain it; it was reverted, see 2026-08-06). Worth re-running now
+   that decisions use the stable axis.
+2. program.md §1 validation command points at a non-existent `~/nami-lm/tests/`; the
+   suite is in `~/nami-backpack/projects/numpy-grad/tests/`.
+3. program.md §2 says ≤90 min per HYP; `train.py:TIME_BUDGET` is 240 min.
+4. eval and web_chat still differ in `max_new` (20 vs 40). Temperature was ruled out by
+   measurement; the remaining difference is length only, and harmless.

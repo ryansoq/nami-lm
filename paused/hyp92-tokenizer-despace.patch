@@ -1,0 +1,55 @@
+diff --git a/train.py b/train.py
+index 6e7c803..c0ba7e7 100644
+--- a/train.py
++++ b/train.py
+@@ -19,6 +19,7 @@ import json
+ import math
+ import os
+ import sys
++import re
+ import time
+ from pathlib import Path
+ 
+@@ -120,7 +121,42 @@ class WordTokenizer:
+             d = json.load(f)
+         return cls(vocab=d["vocab"])
+ 
++    # HYP92: collapse whitespace at a CJK boundary before tokenising.
++    #
++    # This tokenizer emits " " as its own token, so 「Bob 是誰？」 and
++    # 「Bob是誰？」 are DIFFERENT sequences and the model has to learn each
++    # spelling separately. It never does — whichever one the corpus happens to
++    # contain is answered, the other returns noise, and which way a borderline
++    # case lands is decided by initialisation. That single fact produced three
++    # separate bugs traced this week:
++    #   - 4 eval probes written without spaces where the corpus has them, whose
++    #     coin-flipping between seeds WAS the entire measured "±3 noise floor"
++    #   - 24 dialogue chunks colliding with canonical rows (HYP91)
++    #   - web_chat's de-spacing normalizer inverting once the corpus shifted to
++    #     56% spaced (fixed 2026-08-08, serving side)
++    # Each was patched at the edge. This removes the distinction at the source,
++    # so both spellings become one sequence and the model is genuinely robust
++    # instead of memorising one form.
++    #
++    # Only collapses when a CJK character is on one side. Latin-Latin and
++    # digit-digit spaces are real word separators and are preserved — an
++    # earlier all-pairs version glued 「2026 04 09」 into one token and churned
++    # vocab by +103. This version measures vocab delta 0 (3510 -> 3510), so it
++    # does NOT shift the np.random.seed(42) draw sequence and stays a clean A/B.
++    _WS_CJK_L = re.compile(r"([一-鿿])\s+([A-Za-z0-9一-鿿])")
++    _WS_CJK_R = re.compile(r"([A-Za-z0-9一-鿿])\s+([一-鿿])")
++
++    @classmethod
++    def _despace_cjk(cls, text):
++        prev = None
++        while prev != text:               # iterate: runs like 「A 是 B」 need 2 passes
++            prev = text
++            text = cls._WS_CJK_L.sub(r"\1\2", text)
++            text = cls._WS_CJK_R.sub(r"\1\2", text)
++        return text
++
+     def _tokenize(self, text):
++        text = self._despace_cjk(text)
+         tokens, i = [], 0
+         while i < len(text):
+             c = text[i]

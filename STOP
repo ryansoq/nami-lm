@@ -1,0 +1,6 @@
+PAUSED by Ryan 2026-08-08 22:59 (TG: 「現在先不用跑 llm_nami相關 先記憶然後暫停」).
+
+program.md §5.4 step 1: if this file exists, halt immediately. Heartbeat ticks
+should read state, report "paused", and do nothing else. Delete this file to resume.
+
+Nothing is mid-flight. See journal.md 2026-08-08 for the full resume note.

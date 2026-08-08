@@ -17,7 +17,7 @@
   "best_eval_total_commit": "pending HYP16 commit",
   "current_pid": null,
   "current_started": null,
-  "current_hypothesis": null,
+  "current_hypothesis": "PAUSED 2026-08-08 by Ryan. HYP92 (tokenizer CJK de-spacing) was killed at ep170/200, never evaluated, never deployed. Change saved as paused/hyp92-tokenizer-despace.patch; train.py reverted so the repo matches the deployed weights (web_chat imports the tokenizer from train.py, so leaving it applied would mismatch on the next restart). Pre-launch measurements that are still valid: vocab delta 0 (3510->3510, clean A/B), digits preserved, probes matching corpus 46/51 -> 50/51, tokens -9.9%. Primary claim is DETERMINISM not score — verify with NAMI_SEED 42 vs 43 and tools_soul_variance.py. Trip line: stable axis < 44. See journal 2026-08-08.",
   "current_log": null,
   "last_result_hyp88": {
     "verdict": "REVERT — d112 strict 41 < d96's 42 even on clean corpus",
@@ -1406,5 +1406,11 @@
     "clean_ab": "vocab stayed 3510 and params 736320, identical to HYP89, so the RNG stream was NOT shifted. First properly controlled corpus experiment in the project.",
     "bonus": "「Nami害怕掉記憶怎麼辦？」 went from garbage to a substantively correct answer 「把重要的寫進memory檔 文字大於腦袋」 (scores partial only because the corpus writes it with spaces)",
     "log": "/tmp/nami-lm-hyp91-dlgcollide-1786107779.log"
+  },
+  "paused": {
+    "at": "2026-08-08T22:59+08:00",
+    "by": "Ryan (TG)",
+    "stop_file": true,
+    "deployed": "v0.5.3.0-dlgclean (HYP91), stable axis 46/47, untouched"
   }
 }
